@@ -1,12 +1,12 @@
 package com.domus.tcc.backend.util;
 
-import com.domus.tcc.backend.services.EmailService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
-
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
+
+import com.domus.tcc.backend.services.EmailService;
 
 
 @Component

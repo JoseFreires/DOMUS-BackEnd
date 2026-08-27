@@ -7,7 +7,18 @@ import java.util.List;
 
 import com.domus.tcc.backend.dto.request.DadosRegistrarMoradorDTO;
 
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -30,8 +41,6 @@ public class Morador {
     private LocalDateTime dataSaida;
 
     // Conforme discutimos, a foto é uma URL (String)
-    @Column(name = "foto_perfil")
-    private String urlFoto;
 
     // Relacionamento com a Moradia (Apartamento/Casa)
     // Muitos moradores podem pertencer a uma moradia
@@ -50,7 +59,6 @@ public class Morador {
 
     public Morador(DadosRegistrarMoradorDTO dados, Moradia moradia) {
         this.dataChegada = dados.dataChegada();
-        this.urlFoto = dados.fotoPerfil();
         this.moradia = moradia;
     }
 

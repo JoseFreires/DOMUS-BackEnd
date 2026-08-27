@@ -2,10 +2,7 @@ package com.domus.tcc.backend.dto.response;
 
 
 import java.time.LocalDate;
-import java.util.List;
 
-import com.domus.tcc.backend.domain.Encomenda;
-import com.domus.tcc.backend.domain.Morador;
 import com.domus.tcc.backend.security.Usuario;
 
 public record DadosConsultaMoradorDTO(
@@ -18,7 +15,7 @@ public record DadosConsultaMoradorDTO(
         String cpf,
         LocalDate dataChegada,
         LocalDate nascimento,
-        String foto,
+
         String telefone
 ) {
     public DadosConsultaMoradorDTO(Usuario usuario) {
@@ -32,7 +29,6 @@ public record DadosConsultaMoradorDTO(
                 usuario.getPessoa().getCpf(),
                 usuario.getPessoa().getMorador().getDataChegada(),
                 usuario.getPessoa().getDataNascimento(),
-                usuario.getPessoa().getMorador().getUrlFoto(),
                 usuario.getPessoa().getTelefone()
 
 
