@@ -5,25 +5,24 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import com.domus.tcc.backend.dto.request.DadosAtualizacaoEncomendaDTO;
-import com.domus.tcc.backend.dto.request.DadosAtualizarStatusEncomendaDTO;
-import com.domus.tcc.backend.domain.enums.StatusEncomenda;
-import com.domus.tcc.backend.dto.request.DadosEnvioEmailDTO;
-import com.domus.tcc.backend.util.EncomendaRegistradaEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.domus.tcc.backend.dto.response.DadosConsultaEncomendaDTO;
-import com.domus.tcc.backend.dto.request.DadosRegistrarEncomendaDTO;
 import com.domus.tcc.backend.domain.Encomenda;
 import com.domus.tcc.backend.domain.Pessoa;
-import com.domus.tcc.backend.security.Usuario;
+import com.domus.tcc.backend.domain.enums.StatusEncomenda;
+import com.domus.tcc.backend.dto.request.DadosAtualizacaoEncomendaDTO;
+import com.domus.tcc.backend.dto.request.DadosAtualizarStatusEncomendaDTO;
+import com.domus.tcc.backend.dto.request.DadosRegistrarEncomendaDTO;
+import com.domus.tcc.backend.dto.response.DadosConsultaEncomendaDTO;
 import com.domus.tcc.backend.repository.EncomendaRepository;
 import com.domus.tcc.backend.repository.PessoaRepository;
 import com.domus.tcc.backend.repository.UsuarioRepository;
+import com.domus.tcc.backend.security.Usuario;
+import com.domus.tcc.backend.util.EncomendaRegistradaEvent;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -42,6 +41,9 @@ public class PortariaService {
     @Autowired
     private ApplicationEventPublisher applicationEventPublisher;
 
+    @Autowired
+    private FotoService fotoService;
+
 
     private String gerarTokenEncomenda(){
         SecureRandom random = new SecureRandom();
@@ -51,15 +53,24 @@ public class PortariaService {
 
     @PreAuthorize("hasRole('PORTEIRO')")
     @Transactional
-    public DadosConsultaEncomendaDTO registrarEncomenda(DadosRegistrarEncomendaDTO dados, Usuario logado) {
+    public DadosConsultaEncomendaDTO registrarEncomendaComArquivo(DadosRegistrarEncomendaDTO dados, Usuario logado, org.springframework.web.multipart.MultipartFile arquivo) {
         Pessoa pessoa = pessoaRepository.findById(dados.idDestinatario())
-                .orElseThrow(() -> new EntityNotFoundException("Morador não encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Morador não encontrado"));  
 
         var porteiro = usuarioRepository.findById(logado.getId())
             .orElseThrow(() -> new EntityNotFoundException("Porteiro não encontrado"));
 
 
-        var encomenda = new Encomenda(dados, porteiro, pessoa, gerarTokenEncomenda());
+        String fotoUrl = null;
+        if (arquivo != null && !arquivo.isEmpty()) {
+            try {
+                fotoUrl = fotoService.upload(arquivo);
+            } catch (Exception e) {
+                throw new RuntimeException("Erro ao enviar foto da encomenda: " + e.getMessage(), e);
+            }
+        }
+
+        var encomenda = new Encomenda(dados, porteiro, pessoa, gerarTokenEncomenda(), fotoUrl);
         encomendaRepository.save(encomenda);
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");

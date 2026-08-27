@@ -1,8 +1,8 @@
 package com.domus.tcc.backend.dto.response;
 
-import com.domus.tcc.backend.domain.Morador;
-
 import java.time.LocalDate;
+
+import com.domus.tcc.backend.domain.Morador;
 
 public record DadosConsultaMoradorResumoDTO(
         Long idMorador,
@@ -12,7 +12,6 @@ public record DadosConsultaMoradorResumoDTO(
         String cpf,
         LocalDate dataChegada,
         LocalDate nascimento,
-        String foto,
         String telefone
 ) {
     public DadosConsultaMoradorResumoDTO(Morador morador) {
@@ -24,7 +23,6 @@ public record DadosConsultaMoradorResumoDTO(
                 morador.getPessoa().getCpf(),
                 morador.getDataChegada(),
                 morador.getPessoa().getDataNascimento(),
-                morador.getUrlFoto(),
                 morador.getPessoa().getTelefone()
         );
     }

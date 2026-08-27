@@ -3,18 +3,36 @@ package com.domus.tcc.backend.services;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.domus.tcc.backend.domain.*;
-import com.domus.tcc.backend.dto.request.DadosAtualizacaoMoradorDTO;
-import com.domus.tcc.backend.dto.request.DadosAtualizacaoPorteiroDTO;
-import com.domus.tcc.backend.dto.request.DadosRegistrarMoradorDTO;
-import com.domus.tcc.backend.dto.request.DadosRegistrarPorteiroDTO;
-import com.domus.tcc.backend.dto.response.*;
-import com.domus.tcc.backend.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.domus.tcc.backend.domain.Encomenda;
+import com.domus.tcc.backend.domain.Moradia;
+import com.domus.tcc.backend.domain.Morador;
+import com.domus.tcc.backend.domain.Pessoa;
+import com.domus.tcc.backend.domain.Porteiro;
+import com.domus.tcc.backend.dto.request.DadosAtualizacaoMoradorDTO;
+import com.domus.tcc.backend.dto.request.DadosAtualizacaoPorteiroDTO;
+import com.domus.tcc.backend.dto.request.DadosRegistrarMoradorDTO;
+import com.domus.tcc.backend.dto.request.DadosRegistrarPorteiroDTO;
+import com.domus.tcc.backend.dto.response.DadosConsultaBlocoDTO;
+import com.domus.tcc.backend.dto.response.DadosConsultaBlocoMoradiasDTO;
+import com.domus.tcc.backend.dto.response.DadosConsultaEncomendaDTO;
+import com.domus.tcc.backend.dto.response.DadosConsultaMoradiaDTO;
+import com.domus.tcc.backend.dto.response.DadosConsultaMoradiaMoradoresDTO;
+import com.domus.tcc.backend.dto.response.DadosConsultaMoradorDTO;
+import com.domus.tcc.backend.dto.response.DadosConsultaMoradorEncomendasDTO;
+import com.domus.tcc.backend.dto.response.DadosConsultaPorteiroDTO;
+import com.domus.tcc.backend.repository.BlocoRepository;
+import com.domus.tcc.backend.repository.EncomendaRepository;
+import com.domus.tcc.backend.repository.MoradiaRepository;
+import com.domus.tcc.backend.repository.MoradorRepository;
+import com.domus.tcc.backend.repository.PapelRepository;
+import com.domus.tcc.backend.repository.PessoaRepository;
+import com.domus.tcc.backend.repository.PorteiroRepository;
+import com.domus.tcc.backend.repository.UsuarioRepository;
 import com.domus.tcc.backend.security.Papel;
 import com.domus.tcc.backend.security.Usuario;
 
@@ -149,9 +167,6 @@ public class SindicoService {
         var pessoa = usuario.getPessoa();
         var morador = pessoa.getMorador();
 
-        if(dados.fotoPerfil() != null){
-            morador.setUrlFoto(dados.fotoPerfil());
-        }
 
         if(dados.moradiaIdMoradia() != null){
             var novaMoradia = moradiaRepository.findById(dados.moradiaIdMoradia())

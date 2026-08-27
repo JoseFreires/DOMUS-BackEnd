@@ -16,8 +16,6 @@ public record   DadosRegistrarEncomendaDTO(
     @NotBlank(message = "O nome do pacote é obrigatório")
     String nomePacote,
 
-    @NotNull(message = "A imagem do pacote é obrigatório")
-    String foto, // Opcional
 
     @NotNull(message = "O status é obrigatório")
     StatusEncomenda status,

@@ -6,10 +6,14 @@ import java.util.List;
 import com.domus.tcc.backend.dto.request.DadosAtualizacaoEncomendaDTO;
 import com.domus.tcc.backend.dto.request.DadosAtualizarStatusEncomendaDTO;
 import com.domus.tcc.backend.domain.enums.StatusEncomenda;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.domus.tcc.backend.dto.response.DadosConsultaEncomendaDTO;
@@ -18,6 +22,8 @@ import com.domus.tcc.backend.security.Usuario;
 import com.domus.tcc.backend.services.PortariaService;
 
 import jakarta.validation.Valid;
+
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @RestController
 @RequestMapping("/encomendas")
@@ -38,13 +44,22 @@ public class EncomendaController {
         return ResponseEntity.ok(portariaService.buscarEncomendaPorId(id));
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<DadosConsultaEncomendaDTO> registrarEncomenda(
-            @Valid @RequestBody DadosRegistrarEncomendaDTO dados,
+            @Valid @ModelAttribute DadosRegistrarEncomendaDTO dados,
             UriComponentsBuilder uriBuilder,
-            @AuthenticationPrincipal Usuario logado) {
+            @AuthenticationPrincipal Usuario logado,
+            @RequestParam(value = "arquivo", required = false) MultipartFile arquivo,
+            @RequestParam(value = "foto", required = false) MultipartFile foto) {
 
-        DadosConsultaEncomendaDTO encomendaDto = portariaService.registrarEncomenda(dados, logado);
+        MultipartFile fotoRecebida = arquivo != null && !arquivo.isEmpty() ? arquivo : foto;
+        if (fotoRecebida == null || fotoRecebida.isEmpty()) {
+            throw new ResponseStatusException(BAD_REQUEST,
+                    "A foto da encomenda é obrigatória (campo 'foto' ou 'arquivo')");
+        }
+
+        DadosConsultaEncomendaDTO encomendaDto =
+                portariaService.registrarEncomendaComArquivo(dados, logado, fotoRecebida);
         URI uri = uriBuilder.path("/encomendas/{id}").buildAndExpand(encomendaDto.idEncomenda()).toUri();
 
         return ResponseEntity.created(uri).body(encomendaDto);
