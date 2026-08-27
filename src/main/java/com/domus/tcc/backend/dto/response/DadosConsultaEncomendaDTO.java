@@ -1,6 +1,7 @@
 package com.domus.tcc.backend.dto.response;
 
 import com.domus.tcc.backend.domain.Encomenda;
+import com.domus.tcc.backend.domain.enums.TipoRetirada;
 
 import java.time.LocalDateTime;
 
@@ -16,7 +17,8 @@ public record DadosConsultaEncomendaDTO(
         String tokenEncomenda,
         LocalDateTime dataHoraRecebido,
         LocalDateTime dataHoraRetirado,
-        Long idDestinatario
+        Long idDestinatario,
+        TipoRetirada tipoRetirada
 ){
     // Construtor para converter a Entidade Encomenda direto para o DTO
     public DadosConsultaEncomendaDTO(Encomenda encomenda) {
@@ -32,8 +34,8 @@ public record DadosConsultaEncomendaDTO(
             encomenda.getToken(),
             encomenda.getDataHoraRecebido(),
             encomenda.getDataHoraRetirado(),
-            encomenda.getMoradorDestinatario().getId()
-
+            encomenda.getMoradorDestinatario().getId(),
+            encomenda.getTipoRetirada()
         );
     }
 }
