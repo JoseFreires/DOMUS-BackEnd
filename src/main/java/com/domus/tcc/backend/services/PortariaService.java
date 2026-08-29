@@ -25,6 +25,7 @@ import com.domus.tcc.backend.security.Usuario;
 import com.domus.tcc.backend.util.EncomendaRegistradaEvent;
 
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class PortariaService {
@@ -61,7 +62,7 @@ public class PortariaService {
             .orElseThrow(() -> new EntityNotFoundException("Porteiro não encontrado"));
 
 
-        String fotoUrl = null;
+      String fotoUrl = null;
         if (arquivo != null && !arquivo.isEmpty()) {
             try {
                 fotoUrl = fotoService.upload(arquivo);
@@ -124,7 +125,7 @@ public class PortariaService {
     }
 
     @Transactional
-    public void editarEncomenda(Long id, DadosAtualizacaoEncomendaDTO dados) {
+    public void editarEncomenda(Long id, DadosAtualizacaoEncomendaDTO dados, MultipartFile novoArquivo) {
 
         var encomenda = encomendaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Encomenda não encontrada!"));
@@ -136,6 +137,21 @@ public class PortariaService {
 
         if (dados.nomePacote() != null) {
             encomenda.setNomePacote(dados.nomePacote());
+        }
+
+        if (novoArquivo != null && !novoArquivo.isEmpty()) {
+            try {
+                // Remove a imagem antiga do storage antes de salvar a nova
+                if (encomenda.getFotoEncomenda() != null && !encomenda.getFotoEncomenda().isBlank()) {
+                    fotoService.deletarFotoEncomenda(encomenda.getFotoEncomenda());
+                }
+
+                String novaFotoUrl = fotoService.upload(novoArquivo);
+                encomenda.setFotoEncomenda(novaFotoUrl);
+
+            } catch (Exception e) {
+                throw new RuntimeException("Erro ao atualizar a foto do encomenda: " + e.getMessage(), e);
+            }
         }
 
         if (dados.idDestinatario() != null) {
