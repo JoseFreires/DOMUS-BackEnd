@@ -1,6 +1,5 @@
 package com.domus.tcc.backend.services;
 
-import com.domus.tcc.backend.domain.Encomenda;
 import com.domus.tcc.backend.domain.PessoaAutorizada;
 import com.domus.tcc.backend.dto.request.DadosAtualizacaoPessoaAutorizadaDTO;
 import com.domus.tcc.backend.dto.request.DadosRegistrarPessoaAutorizadaDTO;
@@ -9,7 +8,6 @@ import com.domus.tcc.backend.repository.MoradorRepository;
 import com.domus.tcc.backend.repository.PessoaAutorizadaRepository;
 import com.domus.tcc.backend.security.Usuario;
 import jakarta.persistence.EntityNotFoundException;
-import org.hibernate.collection.spi.PersistentSortedMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -97,5 +95,16 @@ public class MoradorService {
         return new DadosConsultaPessoaAutorizadaDTO(pessoaAutorizada);
     }
 
+    @Transactional
+    public void desativarPessoaAutorizada(long id){
+
+        PessoaAutorizada pessoaAutorizada = pessoaAutorizadaRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Pessoa não encontrada."));
+
+        pessoaAutorizada.setAtivo(false);
+
+        pessoaAutorizadaRepository.save(pessoaAutorizada);
+
+    }
 
 }

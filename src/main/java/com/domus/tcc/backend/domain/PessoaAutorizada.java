@@ -20,7 +20,7 @@ public class PessoaAutorizada {
 
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
-        @Column(name = "idPessoaAutorizada")
+        @Column(name = "idPesssoaAutorizada") //Bah está com 3 S, coisa boa, vou deixar assim.
         private Long idPessoaAutorizada;
         
         @Column(name = "nome")
@@ -33,11 +33,15 @@ public class PessoaAutorizada {
         @JoinColumn(name = "morador_idMorador", nullable = false)
         private Morador morador;
 
+        @Column(name = "ativo")
+        private Boolean ativo;
+
 
         public PessoaAutorizada(DadosRegistrarPessoaAutorizadaDTO dados, Morador morador) {
                 this.nome = dados.nome();
                 this.cpf = dados.cpf();
                 this.morador = morador;
+                this.ativo = true;
         }
 }
 

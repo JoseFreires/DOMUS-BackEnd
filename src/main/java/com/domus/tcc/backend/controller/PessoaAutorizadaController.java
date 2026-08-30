@@ -61,4 +61,10 @@ public class PessoaAutorizadaController {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> desativarPessoaAutorizadaPorId(@PathVariable Long id) {
+        moradorService.desativarPessoaAutorizada(id);
+        return ResponseEntity.noContent().build();
+    }
+
 }
