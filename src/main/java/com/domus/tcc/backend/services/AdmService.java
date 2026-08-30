@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -33,15 +34,27 @@ public class AdmService {
     private PapelRepository papelRepository;
 
     @Autowired
+    private FotoService fotoService;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Transactional
-    public DadosConsultaPessoaDTO registrarSindico(DadosRegistrarSindicoDTO dados) {
+    public DadosConsultaPessoaDTO registrarSindico(DadosRegistrarSindicoDTO dados, MultipartFile arquivo) {
 
         Papel papelSindico = papelRepository.findByNomePapel("ROLE_SINDICO")
                 .orElseThrow(() -> new EntityNotFoundException("O papel ROLE_SINDICO não está configurada no banco."));
 
-        Pessoa pessoa = new Pessoa(dados.pessoa());
+        String fotoUrl = null;
+        if (arquivo != null && !arquivo.isEmpty()) {
+            try {
+                fotoUrl = fotoService.uploadFotoPessoa(arquivo);
+            } catch (Exception e) {
+                throw new RuntimeException("Erro ao enviar foto da encomenda: " + e.getMessage(), e);
+            }
+        }
+
+        Pessoa pessoa = new Pessoa(dados.pessoa(), fotoUrl);
         pessoaRepository.save(pessoa);
 
         Usuario usuario = new Usuario(dados.login(), passwordEncoder.encode(dados.login().senha()));
@@ -75,13 +88,13 @@ public class AdmService {
 
     //PUT Sindico
     @Transactional
-    public DadosConsultaPessoaDTO editarSindico(Long idUsuario, DadosAtualizacaoPessoaDTO dados){
+    public DadosConsultaPessoaDTO editarSindico(Long idUsuario, DadosAtualizacaoPessoaDTO dados, MultipartFile novoArquivo){
 
 
         var usuario = usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado!"));
 
-        if (usuario.getPapel().equals("ROLE_SINDICO")){
+        if (usuario.getPapel().getNomePapel().equals("ROLE_SINDICO")){
             var pessoaSindico = usuario.getPessoa();
 
             if(dados.email() != null){
@@ -98,6 +111,21 @@ public class AdmService {
 
             if(dados.telefone() != null){
                 pessoaSindico.setTelefone(dados.telefone());
+            }
+
+            if (novoArquivo != null && !novoArquivo.isEmpty()) {
+                try {
+                    String fotoAntiga = pessoaSindico.getFotoPerfil();
+                    if (fotoAntiga != null && !fotoAntiga.isBlank()) {
+                        fotoService.deletarFotoPessoa(fotoAntiga);
+                    }
+
+                    String novaFotoUrl = fotoService.uploadFotoPessoa(novoArquivo);
+                    pessoaSindico.setFotoPerfil(novaFotoUrl);
+
+                } catch (Exception e) {
+                    throw new RuntimeException("Erro ao atualizar a foto do síndico: " + e.getMessage(), e);
+                }
             }
 
             // O Hibernate salva tudo (PessoaSindico) automaticamente ao final da transação.

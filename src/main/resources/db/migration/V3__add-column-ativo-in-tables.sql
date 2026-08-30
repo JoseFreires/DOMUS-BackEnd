@@ -1,0 +1,11 @@
+ALTER TABLE `pessoa_autorizada`
+    ADD COLUMN `ativo` TINYINT(1) NOT NULL DEFAULT 1;
+
+ALTER TABLE `convidado`
+    ADD COLUMN `ativo` TINYINT(1) NOT NULL DEFAULT 1;
+
+ALTER TABLE `aviso_condominial`
+    ADD COLUMN `ativo` TINYINT(1) NOT NULL DEFAULT 1;
+
+ALTER TABLE `visitante`
+    ADD COLUMN `ativo` TINYINT(1) NOT NULL DEFAULT 1;

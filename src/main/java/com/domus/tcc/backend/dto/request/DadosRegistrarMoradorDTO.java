@@ -17,9 +17,6 @@ public record DadosRegistrarMoradorDTO(
         @NotNull(message = "O ID da moradia/apartamento é obrigatório")
         Long idMoradia,
 
-        @NotBlank(message = "A foto de perfil é obrigatória")
-        String fotoPerfil,
-
         @NotNull(message = "A data de chegada ao condomínio é obrigatória")
         LocalDate dataChegada
 ) {
