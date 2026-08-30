@@ -10,7 +10,9 @@ public record DadosAtualizacaoPessoaDTO(
 
         String telefone,
 
-        LocalDate dataNascimento
+        LocalDate dataNascimento,
+
+        String fotoPerfil
 
 ) {
 }

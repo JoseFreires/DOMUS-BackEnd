@@ -8,9 +8,13 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
+
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @RestController
 @RequestMapping("/sindicos")
@@ -33,10 +37,18 @@ public class SindicoController {
 
     // Registra um novo sindico
     @PostMapping
-    public ResponseEntity<DadosConsultaPessoaDTO> registrarSindico(@Valid @RequestBody DadosRegistrarSindicoDTO dados,
-                                                                   UriComponentsBuilder uriBuilder) {
+    public ResponseEntity<DadosConsultaPessoaDTO> registrarSindico(@Valid @ModelAttribute DadosRegistrarSindicoDTO dados,
+                                                                   UriComponentsBuilder uriBuilder,
+                                                                   @RequestParam(value = "arquivo", required = false) MultipartFile arquivo,
+                                                                   @RequestParam(value = "foto", required = false) MultipartFile foto) {
 
-        var sindicoDTO = admService.registrarSindico(dados);
+
+        MultipartFile fotoRecebida = arquivo != null && !arquivo.isEmpty() ? arquivo : foto;
+        if (fotoRecebida == null || fotoRecebida.isEmpty()) {
+            throw new ResponseStatusException(BAD_REQUEST,
+                    "A foto do porteiro é obrigatória (campo 'foto' ou 'arquivo')");
+        }
+        var sindicoDTO = admService.registrarSindico(dados, fotoRecebida);
 
         var uri = uriBuilder.path("/sindicos/{id}").buildAndExpand(sindicoDTO.idUsuario()).toUri();
 
@@ -47,9 +59,13 @@ public class SindicoController {
     @PutMapping("/{id}")
     public ResponseEntity<Void> editarSindico(
             @PathVariable Long id,
-            @Valid @RequestBody DadosAtualizacaoPessoaDTO dados) {
+            @Valid @ModelAttribute DadosAtualizacaoPessoaDTO dados,
+            @RequestParam(value = "arquivo", required = false) MultipartFile arquivo,
+            @RequestParam(value = "foto", required = false) MultipartFile foto) {
 
-        admService.editarSindico(id, dados);
+
+        MultipartFile fotoRecebida = (arquivo != null && !arquivo.isEmpty()) ? arquivo : foto;
+        admService.editarSindico(id, dados, fotoRecebida);
         return ResponseEntity.noContent().build();
     }
 

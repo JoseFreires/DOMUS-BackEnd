@@ -42,10 +42,4 @@ public class Porteiro{
 
     }
 
-    /* Paralistar todas as encomendas que este porteiro
-       recebeu, pode adicionar o mapeamento inverso aqui:
-       
-       @OneToMany(mappedBy = "porteiro")
-       private List<Encomenda> encomendasRecebidas;
-    */
 }

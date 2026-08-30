@@ -30,9 +30,9 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 public class EncomendaController {
 
     @Autowired
-    private PortariaService portariaService;
+   private PortariaService portariaService;
 
-    @GetMapping
+   @GetMapping
     public ResponseEntity<List<DadosConsultaEncomendaDTO>> listarEncomendas(
             @RequestParam(required = false) StatusEncomenda status) {
 
@@ -68,9 +68,15 @@ public class EncomendaController {
     @PutMapping("/{id}")
     public ResponseEntity<Void> editarEncomenda(
             @PathVariable Long id,
-            @Valid @RequestBody DadosAtualizacaoEncomendaDTO dados) {
+            @Valid @ModelAttribute DadosAtualizacaoEncomendaDTO dados,
+            @RequestParam(value = "arquivo", required = false) MultipartFile arquivo,
+            @RequestParam(value = "foto", required = false) MultipartFile foto) {
 
-        portariaService.editarEncomenda(id, dados);
+
+
+        MultipartFile fotoRecebida = (arquivo != null && !arquivo.isEmpty()) ? arquivo : foto;
+        System.out.println("AQUIIIIII" + fotoRecebida);
+        portariaService.editarEncomenda(id, dados, fotoRecebida);
         return ResponseEntity.noContent().build();
     }
 

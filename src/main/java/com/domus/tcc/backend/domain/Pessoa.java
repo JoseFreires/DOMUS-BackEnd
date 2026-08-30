@@ -35,6 +35,10 @@ public class Pessoa {
     private LocalDate dataNascimento;
 
     private String telefone;
+
+    @Column(name = "foto_perfil")
+    private String fotoPerfil;
+
     private String email;
 
     @OneToOne(mappedBy = "pessoa", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -43,12 +47,13 @@ public class Pessoa {
     @OneToOne(mappedBy = "pessoa", cascade = CascadeType.ALL, orphanRemoval = true)
     private Porteiro porteiro;
 
-    public Pessoa(DadosRegistrarPessoaDTO dados) {
+    public Pessoa(DadosRegistrarPessoaDTO dados, String fotoPerfil) {
         this.nomeCompleto = dados.nomeCompleto();
         this.cpf = dados.cpf();
         this.email = dados.email();
         this.telefone = dados.telefone();
         this.dataNascimento = dados.dataNascimento();
         this.ativo = true;
+        this.fotoPerfil = fotoPerfil;
     }
 }

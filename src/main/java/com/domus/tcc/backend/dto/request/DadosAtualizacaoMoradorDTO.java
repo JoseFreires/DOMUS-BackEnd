@@ -8,9 +8,6 @@ public record DadosAtualizacaoMoradorDTO(
 
         LocalDate dataSaida,
 
-        String fotoPerfil,
-
-
         Long moradiaIdMoradia,
 
         String nomeCompleto,
