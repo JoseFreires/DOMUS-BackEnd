@@ -40,8 +40,6 @@ public class Morador {
     @Column(name = "data_saida")
     private LocalDateTime dataSaida;
 
-    // Conforme discutimos, a foto é uma URL (String)
-
     // Relacionamento com a Moradia (Apartamento/Casa)
     // Muitos moradores podem pertencer a uma moradia
     @ManyToOne(fetch = FetchType.LAZY)

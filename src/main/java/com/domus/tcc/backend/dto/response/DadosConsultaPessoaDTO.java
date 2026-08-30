@@ -21,7 +21,9 @@ public record DadosConsultaPessoaDTO(
 
         LocalDate dataNascimento,
 
-        Boolean ativo
+        Boolean ativo,
+
+        String fotoPerfil
 )
 {
         public DadosConsultaPessoaDTO(Usuario usuario){
@@ -32,7 +34,8 @@ public record DadosConsultaPessoaDTO(
             usuario.getPessoa().getEmail(),
             usuario.getPessoa().getTelefone(),
             usuario.getPessoa().getDataNascimento(),
-            usuario.getPessoa().getAtivo()
+            usuario.getPessoa().getAtivo(),
+            usuario.getPessoa().getFotoPerfil()
             );
         }
 

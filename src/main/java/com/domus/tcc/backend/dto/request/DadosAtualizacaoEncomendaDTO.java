@@ -6,6 +6,7 @@ public record DadosAtualizacaoEncomendaDTO(
 
     String observacao,
 
-    Long idDestinatario
+    Long idDestinatario,
 
+    String fotoEncomenda
 ){}
