@@ -37,6 +37,7 @@ import com.domus.tcc.backend.security.Papel;
 import com.domus.tcc.backend.security.Usuario;
 
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class SindicoService {
@@ -63,6 +64,9 @@ public class SindicoService {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
+    private FotoService fotoService;
+
+    @Autowired
     private BlocoRepository blocoRepository;
 
     @Autowired
@@ -73,7 +77,7 @@ public class SindicoService {
 
     //POST Morador
     @Transactional
-    public DadosConsultaMoradorDTO registrarMorador(DadosRegistrarMoradorDTO dados) {
+    public DadosConsultaMoradorDTO registrarMorador(DadosRegistrarMoradorDTO dados, MultipartFile arquivo) {
 
         //Buscando a moradia para associar (como tinhaos falado nas reuniões moradia etc já vai ter cadastro)
         Moradia moradia = moradiaRepository.findById(dados.idMoradia())
@@ -83,8 +87,17 @@ public class SindicoService {
         Papel papelMorador = papelRepository.findByNomePapel("ROLE_MORADOR")
                 .orElseThrow(() -> new EntityNotFoundException("O papel ROLE_MORADOR não está configurado no banco."));
 
+        String fotoUrl = null;
+        if (arquivo != null && !arquivo.isEmpty()) {
+            try {
+                fotoUrl = fotoService.uploadFotoPessoa(arquivo);
+            } catch (Exception e) {
+                throw new RuntimeException("Erro ao enviar foto do morador: " + e.getMessage(), e);
+            }
+        }
+
         //Instancia de pessoa
-        Pessoa pessoa = new Pessoa(dados.pessoa());
+        Pessoa pessoa = new Pessoa(dados.pessoa(), fotoUrl);
 
         //Instancia de Morador (Não é mais um papel)
         Morador morador = new Morador(dados, moradia);
@@ -157,7 +170,7 @@ public class SindicoService {
 
     //PUT Morador
     @Transactional
-    public DadosConsultaMoradorDTO editarMorador(Long idMorador, DadosAtualizacaoMoradorDTO dados){
+    public DadosConsultaMoradorDTO editarMorador(Long idMorador, DadosAtualizacaoMoradorDTO dados, MultipartFile novoArquivo){
 
 
         Usuario usuario = moradorRepository.findUsuarioByMoradorId(idMorador)
@@ -186,6 +199,21 @@ public class SindicoService {
             pessoa.setTelefone(dados.telefone());
         }
 
+        if (novoArquivo != null && !novoArquivo.isEmpty()) {
+            try {
+                // Remove a imagem antiga do storage antes de salvar a nova
+                if (pessoa.getFotoPerfil() != null && !pessoa.getFotoPerfil().isBlank()) {
+                    fotoService.deletarFotoPessoa(pessoa.getFotoPerfil());
+                }
+
+                String novaFotoUrl = fotoService.uploadFotoPessoa(novoArquivo);
+                pessoa.setFotoPerfil(novaFotoUrl);
+
+            } catch (Exception e) {
+                throw new RuntimeException("Erro ao atualizar a foto do morador: " + e.getMessage(), e);
+            }
+        }
+
         // O Hibernate salva tudo (Pessoa e Morador) automaticamente ao final da transação.
         return new DadosConsultaMoradorDTO(usuario);
     }
@@ -212,13 +240,23 @@ public class SindicoService {
 
     //POST Porteiro
     @Transactional
-    public DadosConsultaPorteiroDTO registrarPorteiro(DadosRegistrarPorteiroDTO dados){
+    public DadosConsultaPorteiroDTO registrarPorteiro(DadosRegistrarPorteiroDTO dados, MultipartFile arquivo){
 
         //Busca Papel Porteiro
         Papel papelPorteiro = papelRepository.findByNomePapel("ROLE_PORTEIRO")
                 .orElseThrow(() -> new EntityNotFoundException("O papel ROLE_PORTEIRO não está configurado no banco."));
 
-        Pessoa pessoa = new Pessoa(dados.pessoa());
+
+        String fotoUrl = null;
+        if (arquivo != null && !arquivo.isEmpty()) {
+            try {
+                fotoUrl = fotoService.uploadFotoPessoa(arquivo);
+            } catch (Exception e) {
+                throw new RuntimeException("Erro ao enviar foto da encomenda: " + e.getMessage(), e);
+            }
+        }
+
+        Pessoa pessoa = new Pessoa(dados.pessoa(), fotoUrl);
 
         Porteiro porteiro = new Porteiro(dados);
 
@@ -267,7 +305,7 @@ public class SindicoService {
 
     //PUT Porteiro
     @Transactional
-    public DadosConsultaPorteiroDTO editarPorteiro(Long idPorteiro, DadosAtualizacaoPorteiroDTO dados){
+    public DadosConsultaPorteiroDTO editarPorteiro(Long idPorteiro, DadosAtualizacaoPorteiroDTO dados, MultipartFile novoArquivo){
 
 
         Usuario usuario = porteiroRepository.findUsuarioByPorteiroId(idPorteiro)
@@ -294,6 +332,21 @@ public class SindicoService {
 
         if(dados.telefone() != null){
             pessoa.setTelefone(dados.telefone());
+        }
+
+        if (novoArquivo != null && !novoArquivo.isEmpty()) {
+            try {
+
+                if (pessoa.getFotoPerfil() != null && !pessoa.getFotoPerfil().isBlank()) {
+                    fotoService.deletarFotoPessoa(pessoa.getFotoPerfil());
+                }
+
+                String novaFotoUrl = fotoService.uploadFotoPessoa(novoArquivo);
+                pessoa.setFotoPerfil(novaFotoUrl);
+
+            } catch (Exception e) {
+                throw new RuntimeException("Erro ao atualizar a foto do porteiro: " + e.getMessage(), e);
+            }
         }
 
         // O Hibernate salva tudo (Pessoa e Porteiro) automaticamente ao final da transação.
