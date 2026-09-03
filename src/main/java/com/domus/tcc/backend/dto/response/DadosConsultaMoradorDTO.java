@@ -16,7 +16,8 @@ public record DadosConsultaMoradorDTO(
         LocalDate dataChegada,
         LocalDate nascimento,
 
-        String telefone
+        String telefone,
+        Boolean ativo
 ) {
     public DadosConsultaMoradorDTO(Usuario usuario) {
         this(
@@ -29,8 +30,8 @@ public record DadosConsultaMoradorDTO(
                 usuario.getPessoa().getCpf(),
                 usuario.getPessoa().getMorador().getDataChegada(),
                 usuario.getPessoa().getDataNascimento(),
-                usuario.getPessoa().getTelefone()
-
+                usuario.getPessoa().getTelefone(),
+                usuario.getPessoa().getAtivo()
 
         );
 
