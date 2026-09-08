@@ -8,21 +8,25 @@ import com.domus.tcc.backend.security.Usuario;
 public record DadosConsultaMoradorDTO(
         Long idMorador,
         Long idPessoa,
-        String nome,
+        Long idMoradia,
+        Long idBloco,
+        String nomeCompleto,
         String email,
         String numeroApartamento,
         String bloco,
         String cpf,
         LocalDate dataChegada,
-        LocalDate nascimento,
-
+        LocalDate dataNascimento,
         String telefone,
         Boolean ativo
+
 ) {
     public DadosConsultaMoradorDTO(Usuario usuario) {
         this(
                 usuario.getPessoa().getMorador().getId(),
                 usuario.getPessoa().getId(),
+                usuario.getPessoa().getMorador().getMoradia().getId(),
+                usuario.getPessoa().getMorador().getMoradia().getBloco().getId(),
                 usuario.getPessoa().getNomeCompleto(),
                 usuario.getPessoa().getEmail(),
                 usuario.getPessoa().getMorador().getMoradia().getNumero(),
