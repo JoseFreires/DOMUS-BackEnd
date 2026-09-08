@@ -7,11 +7,11 @@ import com.domus.tcc.backend.domain.Morador;
 public record DadosConsultaMoradorResumoDTO(
         Long idMorador,
         Long idPessoa,
-        String nome,
+        String nomeCompleto,
         String email,
         String cpf,
         LocalDate dataChegada,
-        LocalDate nascimento,
+        LocalDate dataNascimento,
         String telefone
 ) {
     public DadosConsultaMoradorResumoDTO(Morador morador) {
