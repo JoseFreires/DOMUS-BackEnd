@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .header {
+            background-color: #003366;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 28px;
+            letter-spacing: 2px;
+        }
+        .header p {
+            color: #a0a0b0;
+            margin: 5px 0 0;
+            font-size: 13px;
+        }
+        .body {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 16px;
+        }
+        .message {
+            font-size: 15px;
+            color: #555;
+            line-height: 1.6;
+        }
+        .card {
+            background-color: #f0f4ff;
+            border-left: 4px solid #4a6cf7;
+            border-radius: 6px;
+            padding: 20px 24px;
+            margin: 24px 0;
+        }
+        .card p {
+            margin: 6px 0;
+            font-size: 14px;
+            color: #444;
+        }
+        .card p span {
+            font-weight: bold;
+            color: #1a1a2e;
+        }
+        .token-box p {
+            color: #a0a0b0;
+            font-size: 13px;
+            margin: 0 0 8px;
+        }
+        .token-box h2 {
+            color: #ffffff;
+            font-size: 36px;
+            letter-spacing: 8px;
+            margin: 0;
+        }
+        .footer {
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="header">
+        <h1>HERMES</h1>
+        <p>Sistema de Gestão de Condomínio</p>
+    </div>
+
+    <div class="body">
+        <p class="greeting">Olá, <strong th:text="${nomeDestinatario}">Morador</strong>! 📦</p>
+
+        <p class="message">
+            Uma encomenda chegou na portaria do seu condomínio e está aguardando retirada.
+            Confira os detalhes abaixo:
+        </p>
+
+        <div class="card">
+            <p>📅 <span>Data de chegada:</span> <span th:text="${dataChegada}">00/00/0000</span></p>
+            <p>📦 <span>Pacote:</span> <span th:text="${nomePacote}">Descrição do pacote</span></p>
+            <p>👷 <span>Registrado por:</span> <span th:text="${nomePorteiro}">Porteiro</span></p>
+        </div>
+
+        <p class="message">
+            Caso não possa comparecer, você pode autorizar outra pessoa a retirar
+            a encomenda em seu nome diretamente pelo sistema.
+        </p>
+    </div>
+
+    <div class="footer">
+        <p>Este é um email automático, por favor não responda.</p>
+        <p>© 2026 Hermes — Sistema de Gestão de Condomínio</p>
+    </div>
+
+</div>
+</body>
+</html>
