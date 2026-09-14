@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 
 import java.io.IOException;
+import java.util.List;
 
 @Service
 public class EmailServiceImpl implements EmailService {
@@ -61,5 +62,20 @@ public class EmailServiceImpl implements EmailService {
         } catch (MessagingException e) {
             logger.error("Falha ao enviar email HTML para {}: {}", destinatario, e.getMessage());
         }
+    }
+
+    @Async
+    public void enviarBroadcast(List<String> moradores, String assunto, String htmlBody) {
+        int deuBom = 0, deuRuim = 0; // Para verificarmos se algum email não foi enviado
+        for (String morador : moradores) {
+            try {
+                enviarEmailHtml(morador, assunto, htmlBody);
+                deuBom++;
+            } catch (Exception e) {
+                deuRuim++;
+                logger.error("Erro no broadcast para {}: {}", morador, e.getMessage());
+            }
+        }
+        logger.info("Broadcast finalizado. deuBom: {}, deuRuim: {}", deuBom, deuRuim);
     }
 }
