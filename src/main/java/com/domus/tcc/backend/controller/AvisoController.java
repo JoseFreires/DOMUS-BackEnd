@@ -2,6 +2,7 @@ package com.domus.tcc.backend.controller;
 import com.domus.tcc.backend.dto.request.DadosAtualizacaoAvisoDTO;
 import com.domus.tcc.backend.dto.request.DadosRegistrarAvisoDTO;
 import com.domus.tcc.backend.dto.response.DadosConsultaAvisoDTO;
+import com.domus.tcc.backend.dto.response.DadosConsultaEncomendaDTO;
 import com.domus.tcc.backend.security.Usuario;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,11 @@ public class AvisoController {
     @GetMapping("/desativados")
     public ResponseEntity<List<DadosConsultaAvisoDTO>> listarAvisosNaoAtivos() {
         return ResponseEntity.ok(avisoService.listarTodosAvisosNaoAtivos());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<DadosConsultaAvisoDTO> encontrarAvisoPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(avisoService.buscarAvisoPorId(id));
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
