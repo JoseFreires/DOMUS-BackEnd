@@ -18,7 +18,8 @@ public record DadosConsultaEncomendaDTO(
         LocalDateTime dataHoraRecebido,
         LocalDateTime dataHoraRetirado,
         Long idDestinatario,
-        TipoRetirada tipoRetirada
+        TipoRetirada tipoRetirada,
+        String fotoPacote
 ){
     // Construtor para converter a Entidade Encomenda direto para o DTO
     public DadosConsultaEncomendaDTO(Encomenda encomenda) {
@@ -35,7 +36,8 @@ public record DadosConsultaEncomendaDTO(
             encomenda.getDataHoraRecebido(),
             encomenda.getDataHoraRetirado(),
             encomenda.getMoradorDestinatario().getId(),
-            encomenda.getTipoRetirada()
+            encomenda.getTipoRetirada(),
+            encomenda.getFotoEncomenda()
         );
     }
 }
