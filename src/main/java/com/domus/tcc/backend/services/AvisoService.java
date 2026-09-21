@@ -1,6 +1,7 @@
 package com.domus.tcc.backend.services;
 
 import com.domus.tcc.backend.domain.AvisoCondominial;
+import com.domus.tcc.backend.domain.Condominio;
 import com.domus.tcc.backend.dto.request.DadosAtualizacaoAvisoDTO;
 import com.domus.tcc.backend.dto.request.DadosRegistrarAvisoDTO;
 import com.domus.tcc.backend.dto.response.DadosConsultaAvisoDTO;
@@ -52,7 +53,7 @@ public class AvisoService {
                 .orElseThrow(() -> new EntityNotFoundException("Sindico não encontrado"));
 
 
-        var condominio = condominioRepository.findById(dados.idCondominio())
+        var condominio = condominioRepository.findById(1L)
                 .orElseThrow(() -> new EntityNotFoundException("Condominio não encontrado"));
 
 
