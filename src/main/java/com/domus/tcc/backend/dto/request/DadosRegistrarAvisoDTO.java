@@ -19,10 +19,8 @@ public record DadosRegistrarAvisoDTO (
       TipoAviso tipoAviso,
 
       @NotNull(message = "A data de Validade é obrigatória")
-      LocalDate dataValidadeAviso,
+      LocalDate dataValidadeAviso
 
-      @NotNull(message = "O id do condomino é obrigatório")
-      Long idCondominio
 ){
 
 
