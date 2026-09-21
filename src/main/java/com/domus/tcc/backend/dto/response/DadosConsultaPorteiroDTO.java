@@ -3,6 +3,9 @@ package com.domus.tcc.backend.dto.response;
 import com.domus.tcc.backend.security.Usuario;
 import com.domus.tcc.backend.domain.enums.TurnoPorteiro;
 
+import java.time.LocalDate;
+import java.util.Date;
+
 public record DadosConsultaPorteiroDTO(
 
         Long idPorteiro,
@@ -21,7 +24,11 @@ public record DadosConsultaPorteiroDTO(
 
         String email,
 
-        String telefone
+        String telefone,
+
+        LocalDate dataNascimento,
+
+        String fotoPerfil
 
 ) {// Construtor
     public DadosConsultaPorteiroDTO(Usuario usuario) {
@@ -34,7 +41,9 @@ public record DadosConsultaPorteiroDTO(
                 usuario.getPessoa().getNomeCompleto(),
                 usuario.getPessoa().getCpf(),
                 usuario.getPessoa().getEmail(),
-                usuario.getPessoa().getTelefone()
+                usuario.getPessoa().getTelefone(),
+                usuario.getPessoa().getDataNascimento(),
+                usuario.getPessoa().getFotoPerfil()
 
         );
     }

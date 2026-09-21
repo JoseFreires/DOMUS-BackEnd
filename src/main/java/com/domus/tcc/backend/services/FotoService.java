@@ -23,6 +23,9 @@ public class FotoService {
     @Value("${minio.bucket-name-pessoa:pessoas}")
     private String bucketNamePessoa;
 
+    @Value("${minio.bucket-name-aviso:avisos}")
+    private String bucketNameAviso;
+
     public FotoService(MinioClient minioClient) {
         this.minioClient = minioClient;
     }
@@ -36,11 +39,19 @@ public class FotoService {
                     BucketExistsArgs.builder().bucket(bucketNamePessoa).build()
             );
 
+            boolean bucketExisteAviso = minioClient.bucketExists(
+                    BucketExistsArgs.builder().bucket(bucketNameAviso).build()
+            );
+
             if (!bucketExisteEncomenda) {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
             }
             if (!bucketExistePessoa) {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketNamePessoa).build());
+            }
+
+            if (!bucketExisteAviso) {
+                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketNameAviso).build());
             }
 
             // Aplica a política de leitura pública (Read-Only)
@@ -72,8 +83,16 @@ public class FotoService {
                             .build()
             );
 
+            minioClient.setBucketPolicy(
+                    SetBucketPolicyArgs.builder()
+                            .bucket(bucketNameAviso)
+                            .config(policy.formatted(bucketNameAviso))
+                            .build()
+            );
+
             System.out.println(">>> MinIO: Bucket '" + bucketName + "' configurado com acesso PUBLICO com sucesso!");
             System.out.println(">>> MinIO: Bucket '" + bucketNamePessoa + "' configurado com acesso PUBLICO com sucesso!");
+            System.out.println(">>> MinIO: Bucket '" + bucketNameAviso + "' configurado com acesso PUBLICO com sucesso!");
         } catch (Exception e) {
             System.err.println(">>> MinIO: Erro ao configurar politica publica: " + e.getMessage());
         }
@@ -129,6 +148,31 @@ public class FotoService {
         return String.format("%s/%s/%s", minioUrl, bucketNamePessoa, nomeArquivo);
     }
 
+    public String uploadFotoAviso(MultipartFile arquivo) throws Exception {
+
+
+        String nomeArquivo = UUID.randomUUID() + "-" + arquivo.getOriginalFilename();
+
+
+        minioClient.putObject(
+                PutObjectArgs.builder()
+                        .bucket(bucketNameAviso)
+                        .object(nomeArquivo)
+                        .stream(
+                                arquivo.getInputStream(),
+                                arquivo.getSize(),
+                                -1
+                        )
+                        .contentType(arquivo.getContentType())
+                        .build()
+        );
+
+        // Monta a URL
+        return String.format("%s/%s/%s", minioUrl, bucketNameAviso, nomeArquivo);
+    }
+
+
+
     //Método para extrair o nome do arquivo para delete
     private String extrairNomeArquivo(String fotoUrl) {
         if (fotoUrl.contains("/")) {
@@ -167,6 +211,25 @@ public class FotoService {
             minioClient.removeObject(
                     RemoveObjectArgs.builder()
                             .bucket(bucketNamePessoa)
+                            .object(nomeArquivo)
+                            .build()
+            );
+        } catch (Exception e) {
+            System.err.println("Aviso: Não foi possível remover o arquivo antigo do MinIO: " + e.getMessage());
+        }
+    }
+
+    public void deletarFotoAviso(String fotoUrl) {
+        if (fotoUrl == null || fotoUrl.isBlank()) {
+            return;
+        }
+
+        try {
+            String nomeArquivo = extrairNomeArquivo(fotoUrl);
+
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(bucketNameAviso)
                             .object(nomeArquivo)
                             .build()
             );
