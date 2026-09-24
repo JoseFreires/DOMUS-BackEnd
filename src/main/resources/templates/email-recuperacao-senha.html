@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Redefinição de senha</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 24px; margin: 0;">
+<div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; padding: 24px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+    <h2 style="color: #1f2937; margin-top: 0;">Redefinição de senha</h2>
+    <p>Olá, <strong th:text="${nomeUsuario}">Usuário</strong>,</p>
+    <p>Recebemos sua solicitação para redefinir a senha da sua conta.</p>
+    <p>Para continuar, acesse a tela de redefinição de senha no sistema:</p>
+
+    <p style="text-align: center; margin: 32px 0;">
+        <a th:href="${linkRedefinicao}"
+           style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold;">
+            Redefinir senha
+        </a>
+    </p>
+
+    <p>Se você não solicitou essa alteração, ignore este e-mail.</p>
+    <p>Atenciosamente,<br />Equipe <span th:text="${nomeSistema}">Domus</span></p>
+</div>
+</body>
+</html>

@@ -5,7 +5,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 
-import com.domus.tcc.backend.domain.ContaAdm;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
@@ -14,6 +13,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.domus.tcc.backend.domain.ContaAdm;
 import com.domus.tcc.backend.security.Usuario;
 
 
@@ -81,6 +81,40 @@ public class TokenService{
 
     }
 
+    public String gerarTokenRedefinicaoSenha(String username) {
+        try {
+            Algorithm algorithm = Algorithm.HMAC256(segredo.trim());
+
+            return JWT.create()
+                    .withIssuer("Hermes")
+                    .withSubject(username)
+                    .withClaim("tipo", "redefinicao_senha")
+                    .withExpiresAt(ExpiracaoRedefinicaoSenha())
+                    .sign(algorithm);
+        } catch (JWTCreationException exception) {
+            throw new RuntimeException("Erro ao gerar token de redefinição", exception);
+        }
+    }
+
+    public String validarTokenRedefinicaoSenha(String tokenJwt) {
+        try {
+            Algorithm algorithm = Algorithm.HMAC256(segredo.trim());
+            var decoded = JWT.require(algorithm)
+                    .withIssuer("Hermes")
+                    .build()
+                    .verify(tokenJwt);
+
+            String tipo = decoded.getClaim("tipo").asString();
+            if (!"redefinicao_senha".equals(tipo)) {
+                throw new JWTVerificationException("Token inválido para redefinição de senha");
+            }
+
+            return decoded.getSubject();
+        } catch (JWTVerificationException exception) {
+            throw new RuntimeException("Token de redefinição inválido ou expirado", exception);
+        }
+    }
+
     private Instant Expiracao(){
 
     return OffsetDateTime.now(ZoneId.of("America/Sao_Paulo"))
@@ -88,6 +122,11 @@ public class TokenService{
                      .toInstant();
     }
 
+    private Instant ExpiracaoRedefinicaoSenha(){
+        return OffsetDateTime.now(ZoneId.of("America/Sao_Paulo"))
+                .plusMinutes(15)
+                .toInstant();
+    }
 
     public String getSubject(String tokenJwt){
 
