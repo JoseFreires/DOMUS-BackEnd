@@ -1,20 +1,20 @@
 package com.domus.tcc.backend.services;
 
-import com.domus.tcc.backend.dto.request.DadosEnvioEmailDTO;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import com.domus.tcc.backend.dto.request.DadosEnvioEmailDTO;
 
-import java.io.IOException;
-import java.util.List;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 
 @Service
 public class EmailServiceImpl implements EmailService {
@@ -23,9 +23,8 @@ public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${spring.mail.remetente}")
-    private String remetente;
-
+    @Value("${spring.mail.username:}")
+    private String usuarioSmtp;
 
     public EmailServiceImpl(JavaMailSender mailSender) {
         this.mailSender = mailSender;
@@ -35,6 +34,10 @@ public class EmailServiceImpl implements EmailService {
     @Async
     public void enviarEmail(DadosEnvioEmailDTO dados) {
         try {
+            String remetente = (dados.remetente() == null || dados.remetente().isBlank())
+                    ? usuarioSmtp
+                    : dados.remetente();
+
             SimpleMailMessage mensagem = new SimpleMailMessage();
             mensagem.setFrom(remetente);
             mensagem.setTo(dados.destinatario());
@@ -50,13 +53,21 @@ public class EmailServiceImpl implements EmailService {
     @Override
     @Async
     public void enviarEmailHtml(String destinatario, String assunto, String htmlBody) {
+        enviarEmailHtml(usuarioSmtp, destinatario, assunto, htmlBody);
+    }
+
+    @Override
+    @Async
+    public void enviarEmailHtml(String remetente, String destinatario, String assunto, String htmlBody) {
         try {
+            String remetenteFinal = (remetente == null || remetente.isBlank()) ? usuarioSmtp : remetente;
+
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
-            helper.setFrom(remetente);
+            helper.setFrom(remetenteFinal);
             helper.setTo(destinatario);
             helper.setSubject(assunto);
-            helper.setText(htmlBody, true); // true = é HTML
+            helper.setText(htmlBody, true);
             mailSender.send(mimeMessage);
             logger.info("Email HTML enviado para {}", destinatario);
         } catch (MessagingException e) {
@@ -66,7 +77,7 @@ public class EmailServiceImpl implements EmailService {
 
     @Async
     public void enviarBroadcast(List<String> moradores, String assunto, String htmlBody) {
-        int deuBom = 0, deuRuim = 0; // Para verificarmos se algum email não foi enviado
+        int deuBom = 0, deuRuim = 0;
         for (String morador : moradores) {
             try {
                 enviarEmailHtml(morador, assunto, htmlBody);
