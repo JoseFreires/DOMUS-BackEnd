@@ -1,5 +1,4 @@
 package com.domus.tcc.backend.domain;
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -33,4 +32,8 @@ public class Moradia {
     // O 'mappedBy' aponta para o nome do atributo 'moradia' dentro da classe Morador
     @OneToMany(mappedBy = "moradia")
     private List<Morador> moradores = new ArrayList<>();
+
+    public Long getId() {
+        return this.id;
+    }
 }

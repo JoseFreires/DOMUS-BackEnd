@@ -60,6 +60,10 @@ public class Usuario implements UserDetails {
 
     }
 
+    public Long getId() {
+        return this.id;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         if (papel != null) {
