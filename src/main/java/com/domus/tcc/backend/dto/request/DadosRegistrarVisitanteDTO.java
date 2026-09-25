@@ -6,8 +6,7 @@ public record DadosRegistrarVisitanteDTO(
 
     @NotNull(message = "O nome do visitante é obrigatório.")
     String nome,
-   
-
+    
     @NotNull(message = "O tipo de visita é obrigatório.")  
     Long idTipoVisita,
 
