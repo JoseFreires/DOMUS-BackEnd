@@ -131,7 +131,7 @@ public class TokenService{
     public String getSubject(String tokenJwt){
 
         try {
-            Algorithm  algorithm = Algorithm.HMAC256(segredo);
+            Algorithm  algorithm = Algorithm.HMAC256(segredo.trim());
             return   JWT.require(algorithm)
                 .withIssuer("Hermes")
                 .build()
