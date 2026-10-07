@@ -40,7 +40,8 @@ public class TokenService{
                 .withSubject(usuario.getUsername()) 
                 .withClaim("roles", roles)
                     .withClaim("nome", nome)
-                .withExpiresAt(Expiracao())
+                    .withClaim("termosAceitos", usuario.isTermosAceitos())
+                    .withExpiresAt(Expiracao())
                 .sign(algorithm);
 
                 
