@@ -150,16 +150,17 @@ public class SindicoService {
 
     //GET Encomendas do Morador
     @Transactional(readOnly = true)
-    public DadosConsultaMoradorEncomendasDTO buscarEncomendasMorador(Long idMorador) {
+    public DadosConsultaMoradorEncomendasDTO buscarEncomendasMorador(Long idMorador, Long idPessoa) {
         Usuario usuario = moradorRepository.findUsuarioByMoradorId(idMorador)
                 .orElseThrow(() -> new EntityNotFoundException("Morador não encontrado"));
 
 
         if (usuario.getPessoa().getMorador() == null) {
+
             throw new EntityNotFoundException("O usuário informado não é um morador.");
         }
 
-        List<Encomenda> encomendas = encomendaRepository.findByMoradorId(idMorador);
+        List<Encomenda> encomendas = encomendaRepository.findByMoradorId(idPessoa);
 
         return new DadosConsultaMoradorEncomendasDTO(encomendas.stream()
                                                         .map(DadosConsultaEncomendaDTO::new)
