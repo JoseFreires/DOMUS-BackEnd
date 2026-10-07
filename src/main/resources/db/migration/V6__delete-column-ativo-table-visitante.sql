@@ -1,0 +1,2 @@
+ALTER TABLE visitante
+DROP COLUMN Ativo;
