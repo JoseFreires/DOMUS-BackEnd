@@ -1,12 +1,12 @@
 package com.domus.tcc.backend.infra.aop;
 
-import com.domus.tcc.backend.domain.ContaAdm;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import com.domus.tcc.backend.domain.ContaAdm;
 import com.domus.tcc.backend.security.Usuario;
 import com.domus.tcc.backend.services.LogSistemaService;
 
@@ -26,7 +26,7 @@ public class LogAspect {
         this.request = request;
     }
 
-    @Before("execution(* com.hermes..controller..*(..))")
+    @Before("execution(* com.domus..controller..*(..))")
     public void registrarLog(JoinPoint joinPoint) {
 
         String path = request.getRequestURI();
