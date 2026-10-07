@@ -45,6 +45,9 @@ public class Usuario implements UserDetails {
     @JoinColumn(name = "Pessoa_idPessoa", nullable = false)
     private Pessoa pessoa;
 
+    @Column(name = "termo_aceito")
+    private boolean termosAceitos = false;
+
     // Relacionamento Many-to-One com Papel
     // Muitos usuários podem ter o mesmo papel
     @ManyToOne(fetch = FetchType.EAGER)
@@ -70,6 +73,10 @@ public class Usuario implements UserDetails {
             return List.of(new SimpleGrantedAuthority(papel.getNomePapel()));
         }
         return List.of();
+    }
+
+    public void aceitarTermosPolitica() {
+        this.termosAceitos = true;
     }
 
     @Override
