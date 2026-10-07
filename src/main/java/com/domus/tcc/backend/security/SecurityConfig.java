@@ -42,6 +42,7 @@ public class SecurityConfig {
                 request.requestMatchers(HttpMethod.GET, "/auth/eu").permitAll();
                 request.requestMatchers(HttpMethod.POST, "/auth/esqueci-minha-senha").permitAll();
                 request.requestMatchers(HttpMethod.PUT, "/auth/redefinir-senha").permitAll();
+                request.requestMatchers(HttpMethod.PUT, "/auth/aceitar-termos").permitAll();
 
                 // ENCOMENDAS
                 request.requestMatchers(HttpMethod.POST, "/encomendas").hasAnyRole("PORTEIRO", "ADMIN");
