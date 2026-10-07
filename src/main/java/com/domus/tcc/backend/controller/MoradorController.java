@@ -4,11 +4,13 @@ import com.domus.tcc.backend.dto.request.DadosAtualizacaoMoradorDTO;
 import com.domus.tcc.backend.dto.request.DadosRegistrarMoradorDTO;
 import com.domus.tcc.backend.dto.response.DadosConsultaMoradorDTO;
 import com.domus.tcc.backend.dto.response.DadosConsultaMoradorEncomendasDTO;
+import com.domus.tcc.backend.security.Usuario;
 import com.domus.tcc.backend.services.SindicoService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -35,9 +37,11 @@ public class MoradorController {
         return ResponseEntity.ok(sindicoService.buscarMoradorPorId(id));
     }
 
-    @GetMapping("/{id}/encomendas")
-    public ResponseEntity<DadosConsultaMoradorEncomendasDTO> encontrarEncomendasMorador(@PathVariable Long id) {
-        return ResponseEntity.ok(sindicoService.buscarEncomendasMorador(id));
+    @GetMapping("/minhas-encomendas")
+    public ResponseEntity<DadosConsultaMoradorEncomendasDTO> encontrarEncomendasMorador( @AuthenticationPrincipal Usuario logado ) {
+        Long idMorador = logado.getPessoa().getMorador().getId();
+        Long idPessoa = logado.getPessoa().getId();
+        return ResponseEntity.ok(sindicoService.buscarEncomendasMorador(idMorador, idPessoa));
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
