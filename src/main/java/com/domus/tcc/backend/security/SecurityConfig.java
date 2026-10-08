@@ -43,6 +43,8 @@ public class SecurityConfig {
                 request.requestMatchers(HttpMethod.POST, "/auth/esqueci-minha-senha").permitAll();
                 request.requestMatchers(HttpMethod.PUT, "/auth/redefinir-senha").permitAll();
                 request.requestMatchers(HttpMethod.PUT, "/auth/aceitar-termos").permitAll();
+                request.requestMatchers(HttpMethod.PUT, "/api/swagger-ui.html").permitAll();
+                request.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll();
 
                 // ENCOMENDAS
                 request.requestMatchers(HttpMethod.POST, "/encomendas").hasAnyRole("PORTEIRO", "ADMIN");
