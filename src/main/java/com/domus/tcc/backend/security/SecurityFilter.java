@@ -1,6 +1,7 @@
 package com.domus.tcc.backend.security;
 
 import java.io.IOException;
+import java.util.Set;
 
 import com.domus.tcc.backend.domain.ContaAdm;
 import com.domus.tcc.backend.repository.ContaAdmRepository;
@@ -27,12 +28,33 @@ public class SecurityFilter extends OncePerRequestFilter {
     private final ContaAdmRepository contaAdmRepository;
     private final TokenService tokenService;
 
+    private static final Set<String> ROTAS_ISENTAS = Set.of(
+            "POST /auth/entrar",
+            "POST /auth/sair",
+            "GET /auth/eu",
+            "POST /auth/esqueci-minha-senha",
+            "PUT /auth/redefinir-senha",
+            "PUT /auth/aceitar-termos"
+    );
+
+    private boolean isRotaIsenta(HttpServletRequest request) {
+        String path = request.getRequestURI().substring(request.getContextPath().length());
+        return ROTAS_ISENTAS.contains(request.getMethod().toUpperCase() + " " + path);
+    }
+
     public SecurityFilter(UsuarioRepository usuarioRepository,
                           ContaAdmRepository contaAdmRepository,
                           TokenService tokenService) {
         this.usuarioRepository = usuarioRepository;
         this.contaAdmRepository = contaAdmRepository;
         this.tokenService = tokenService;
+    }
+
+    private void responderTermosNaoAceitos(HttpServletResponse response) throws IOException {
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(
+                "{\"codigo\":\"TERMOS_NAO_ACEITOS\",\"mensagem\":\"É necessário aceitar os termos de uso.\"}");
     }
 
     @Override
@@ -49,6 +71,14 @@ public class SecurityFilter extends OncePerRequestFilter {
             UserDetails principal = resolverPrincipal(subject);
 
             if (principal != null) {
+
+                if (principal instanceof Usuario usuario
+                        && !usuario.isTermosAceitos()
+                        && !isRotaIsenta(request)) {
+
+                    responderTermosNaoAceitos(response);
+                    return;
+                }
                 var authentication = new UsernamePasswordAuthenticationToken(
                         principal, null, principal.getAuthorities()
                 );
@@ -58,6 +88,7 @@ public class SecurityFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
+
 
     private UserDetails resolverPrincipal(String username) {
         Usuario usuario = (Usuario) usuarioRepository.findByUsername(username);
