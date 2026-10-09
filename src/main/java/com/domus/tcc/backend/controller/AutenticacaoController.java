@@ -4,6 +4,7 @@ import com.domus.tcc.backend.dto.response.DadosConsultaLoginDTO;
 import com.domus.tcc.backend.dto.DadosLoginDTO;
 import com.domus.tcc.backend.security.Usuario;
 import com.domus.tcc.backend.domain.ContaAdm;
+import com.domus.tcc.backend.services.AutenticacaoService;
 import com.domus.tcc.backend.services.TokenService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -28,6 +30,9 @@ public class AutenticacaoController {
     @Autowired
     private TokenService tokenService;
 
+    @Autowired
+    private AutenticacaoService autenticacaoService;
+
 
     //Método para não repetir a lógica de contaAdm e Usuario
     private DadosConsultaLoginDTO extrairDadosUsuario(Object principal) {
@@ -38,7 +43,8 @@ public class AutenticacaoController {
                     usuario.getId(),
                     usuario.getUsername(),
                     usuario.getPessoa().getNomeCompleto(),
-                    role
+                    role,
+                    usuario.isTermosAceitos()
             );
 
         } else if (principal instanceof ContaAdm contaAdm) {
@@ -47,7 +53,8 @@ public class AutenticacaoController {
                     contaAdm.getIdContaAdm(),
                     contaAdm.getUsername(),
                     contaAdm.getNomeConta(),
-                    role
+                    role,
+                    true
             );
 
         } else {
@@ -119,5 +126,24 @@ public class AutenticacaoController {
         DadosConsultaLoginDTO dadosFrontEnd = extrairDadosUsuario(principal);
 
         return ResponseEntity.ok(dadosFrontEnd);
+    }
+
+    @PutMapping("/aceitar-termos")
+    public ResponseEntity<Void> aceitarTermos(@AuthenticationPrincipal Usuario logado) {
+
+
+        String novoToken = autenticacaoService.aceitarTermosPolitica(logado.getId());
+
+        ResponseCookie jwtCookie = ResponseCookie.from("jwtToken", novoToken)
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(2 * 60 * 60)
+                .sameSite("Strict")
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                .build();
     }
 }
