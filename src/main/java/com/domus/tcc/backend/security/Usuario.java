@@ -101,6 +101,6 @@ public class Usuario implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return pessoa != null && Boolean.TRUE.equals(pessoa.getAtivo());
     }
 }
