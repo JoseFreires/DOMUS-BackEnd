@@ -98,4 +98,9 @@ public class Usuario implements UserDetails {
     public boolean isCredentialsNonExpired() {
         return true;
     }
+
+    @Override
+    public boolean isEnabled() {
+        return pessoa != null && Boolean.TRUE.equals(pessoa.getAtivo());
+    }
 }
