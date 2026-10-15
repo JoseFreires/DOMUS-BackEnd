@@ -4,6 +4,7 @@ import com.domus.tcc.backend.dto.response.DadosConsultaLoginDTO;
 import com.domus.tcc.backend.dto.DadosLoginDTO;
 import com.domus.tcc.backend.security.Usuario;
 import com.domus.tcc.backend.domain.ContaAdm;
+import com.domus.tcc.backend.security.JwtCookieUtil;
 import com.domus.tcc.backend.services.AutenticacaoService;
 import com.domus.tcc.backend.services.TokenService;
 
@@ -90,32 +91,16 @@ public class AutenticacaoController {
 
         DadosConsultaLoginDTO dadosFrontEnd = extrairDadosUsuario(principal);
 
-        ResponseCookie jwtCookie = ResponseCookie.from("jwtToken", tokenJwt)
-                .httpOnly(true)
-                .secure(false) // OBS: mudar para true em produção
-                .path("/")
-                .maxAge(2 * 60 * 60)
-                .sameSite("Strict")
-                .build();
-
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, JwtCookieUtil.criar(tokenJwt).toString())
                 .body(dadosFrontEnd);
     }
 
     //POST Login
     @PostMapping("/sair")
     public ResponseEntity<Void> sair() {
-        ResponseCookie jwtCookie = ResponseCookie.from("jwtToken", "")
-                .httpOnly(true)
-                .secure(false) // OBS: mudar para true em produção
-                .path("/")
-                .maxAge(0)
-                .sameSite("Strict")
-                .build();
-
         return ResponseEntity.noContent()
-                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, JwtCookieUtil.limpar().toString())
                 .build();
     }
 
@@ -140,16 +125,8 @@ public class AutenticacaoController {
 
         String novoToken = autenticacaoService.aceitarTermosPolitica(logado.getId());
 
-        ResponseCookie jwtCookie = ResponseCookie.from("jwtToken", novoToken)
-                .httpOnly(true)
-                .secure(false)
-                .path("/")
-                .maxAge(2 * 60 * 60)
-                .sameSite("Strict")
-                .build();
-
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, JwtCookieUtil.criar(novoToken).toString())
                 .build();
     }
 }

@@ -91,13 +91,15 @@ public class SecurityFilter extends OncePerRequestFilter {
 
 
     private UserDetails resolverPrincipal(String username) {
-        Usuario usuario = (Usuario) usuarioRepository.findByUsername(username);
+        UserDetails detalhesUsuario = usuarioRepository.findByUsername(username);
+        Usuario usuario = detalhesUsuario instanceof Usuario encontrado ? encontrado : null;
         if (usuario != null) {
-            return usuario;
+            return usuario.isEnabled() ? usuario : null;
         }
 
-        ContaAdm contaAdm = (ContaAdm) contaAdmRepository.findByUsername(username);
-        if (contaAdm != null) {
+        UserDetails detalhesContaAdm = contaAdmRepository.findByUsername(username);
+        ContaAdm contaAdm = detalhesContaAdm instanceof ContaAdm encontrada ? encontrada : null;
+        if (contaAdm != null && contaAdm.isEnabled()) {
             return contaAdm;
         }
 
