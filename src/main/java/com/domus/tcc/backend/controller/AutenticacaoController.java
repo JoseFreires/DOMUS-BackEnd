@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -69,7 +70,12 @@ public class AutenticacaoController {
     public ResponseEntity<DadosConsultaLoginDTO> entrar(@RequestBody @Valid DadosLoginDTO dados) {
 
         var token = new UsernamePasswordAuthenticationToken(dados.username(), dados.senha());
-        var authentication = manager.authenticate(token);
+        Authentication authentication;
+        try {
+            authentication = manager.authenticate(token);
+        } catch (DisabledException exception) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         var principal = authentication.getPrincipal();
 
 
