@@ -43,6 +43,11 @@ public class PorteiroController {
         return ResponseEntity.ok(sindicoService.listarPorteirosInativos());
     }
 
+    @GetMapping("/inativos/{id}")
+    public ResponseEntity<DadosConsultaPorteiroDTO> encontrarPorteiroInativoPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(sindicoService.buscarPorteiroInativoPorId(id));
+    }
+
      // Cria um novo porteiro
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<DadosConsultaPorteiroDTO> registrarPorteiro(@Valid @ModelAttribute DadosRegistrarPorteiroDTO dados,

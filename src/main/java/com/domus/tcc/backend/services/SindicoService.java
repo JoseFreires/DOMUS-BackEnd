@@ -170,6 +170,16 @@ public class SindicoService {
                 .toList();
     }
 
+    //GET Morador inativo por ID
+    @Transactional(readOnly = true)
+    public DadosConsultaMoradorDTO buscarMoradorInativoPorId(Long idMorador) {
+        Usuario usuario = moradorRepository.findUsuarioByMoradorId(idMorador)
+                .filter(usuarioMorador -> Boolean.FALSE.equals(usuarioMorador.getPessoa().getAtivo()))
+                .orElseThrow(() -> new EntityNotFoundException("Morador inativo não encontrado"));
+
+        return new DadosConsultaMoradorDTO(usuario);
+    }
+
     //PATCH Reativar morador
     @Transactional
     public DadosConsultaMoradorDTO reativarMorador(Long idMorador){
@@ -328,6 +338,18 @@ public class SindicoService {
                         Boolean.FALSE.equals(usuario.getPessoa().getAtivo()))
                 .map(DadosConsultaPorteiroDTO::new)
                 .toList();
+    }
+
+    //GET Porteiro inativo por ID
+    @Transactional(readOnly = true)
+    public DadosConsultaPorteiroDTO buscarPorteiroInativoPorId(Long idPorteiro) {
+        Usuario usuario = usuarioRepository.findById(idPorteiro)
+                .filter(usuarioPorteiro -> usuarioPorteiro.getPessoa() != null
+                        && usuarioPorteiro.getPessoa().getPorteiro() != null
+                        && Boolean.FALSE.equals(usuarioPorteiro.getPessoa().getAtivo()))
+                .orElseThrow(() -> new EntityNotFoundException("Porteiro inativo não encontrado"));
+
+        return new DadosConsultaPorteiroDTO(usuario);
     }
 
     //PATCH Reativar Porteiro

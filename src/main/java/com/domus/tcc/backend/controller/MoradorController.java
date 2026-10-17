@@ -37,6 +37,11 @@ public class MoradorController {
         return ResponseEntity.ok(sindicoService.listarMoradoresInativos());
     }
 
+    @GetMapping("/inativos/{id}")
+    public ResponseEntity<DadosConsultaMoradorDTO> encontrarMoradorInativoPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(sindicoService.buscarMoradorInativoPorId(id));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<DadosConsultaMoradorDTO> encontrarMoradorPorId(@PathVariable Long id) {
         return ResponseEntity.ok(sindicoService.buscarMoradorPorId(id));

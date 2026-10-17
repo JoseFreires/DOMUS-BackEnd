@@ -88,10 +88,23 @@ public class AdmService {
     @Transactional(readOnly = true)
     public List<DadosConsultaPessoaDTO> listarSindicosInativos() {
         return usuarioRepository.findAll().stream()
-                .filter(usuario -> usuario.getPapel().getNomePapel().equals("ROLE_SINDICO") &&
+                .filter(usuario -> usuario.getPapel() != null
+                        && usuario.getPapel().getNomePapel().equals("ROLE_SINDICO") &&
                         Boolean.FALSE.equals(usuario.getPessoa().getAtivo()))
                 .map(DadosConsultaPessoaDTO::new)
                 .toList();
+    }
+
+    //GET Sindico inativo por ID
+    @Transactional(readOnly = true)
+    public DadosConsultaPessoaDTO buscarSindicoInativoPorId(Long idSindico) {
+        Usuario usuario = usuarioRepository.findById(idSindico)
+                .filter(sindico -> sindico.getPapel() != null
+                        && "ROLE_SINDICO".equals(sindico.getPapel().getNomePapel())
+                        && Boolean.FALSE.equals(sindico.getPessoa().getAtivo()))
+                .orElseThrow(() -> new EntityNotFoundException("Sindico inativo não encontrado"));
+
+        return new DadosConsultaPessoaDTO(usuario);
     }
 
     //GET List Log
