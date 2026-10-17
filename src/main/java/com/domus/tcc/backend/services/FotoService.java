@@ -29,6 +29,9 @@ public class FotoService {
     @Value("${minio.bucket-name-espaco:espacosCondominiais}")
     private String bucketNameEspaco;
 
+    @Value("${minio.bucket-name-chamado:chamados}")
+    private String bucketNameChamado;
+
     public FotoService(MinioClient minioClient) {
         this.minioClient = minioClient;
     }
@@ -50,6 +53,10 @@ public class FotoService {
                     BucketExistsArgs.builder().bucket(bucketNameEspaco).build()
             );
 
+            boolean bucketExisteChamado = minioClient.bucketExists(
+                    BucketExistsArgs.builder().bucket(bucketNameChamado).build()
+            );
+
             if (!bucketExisteEncomenda) {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
             }
@@ -59,6 +66,9 @@ public class FotoService {
 
             if (!bucketExisteAviso) {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketNameAviso).build());
+            }
+            if (!bucketExisteChamado) {
+                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketNameChamado).build());
             }
 
             if (!bucketExistsEspaco) {
@@ -108,10 +118,18 @@ public class FotoService {
                             .build()
             );
 
+            minioClient.setBucketPolicy(
+                    SetBucketPolicyArgs.builder()
+                            .bucket(bucketNameChamado)
+                            .config(policy.formatted(bucketNameChamado))
+                            .build()
+            );
+
             System.out.println(">>> MinIO: Bucket '" + bucketName + "' configurado com acesso PUBLICO com sucesso!");
             System.out.println(">>> MinIO: Bucket '" + bucketNamePessoa + "' configurado com acesso PUBLICO com sucesso!");
             System.out.println(">>> MinIO: Bucket '" + bucketNameAviso + "' configurado com acesso PUBLICO com sucesso!");
             System.out.println(">>> MinIO: Bucket '" + bucketNameEspaco + "' configurado com acesso PUBLICO com sucesso!");
+            System.out.println(">>> MinIO: Bucket '" + bucketNameChamado + "' configurado com acesso PUBLICO com sucesso!");
         } catch (Exception e) {
             System.err.println(">>> MinIO: Erro ao configurar politica publica: " + e.getMessage());
         }
@@ -212,6 +230,20 @@ public class FotoService {
         return String.format("%s/%s/%s", minioUrl, bucketNameEspaco, nomeArquivo);
     }
 
+    public String uploadFotoChamado(MultipartFile arquivo) throws Exception {
+        String nomeArquivo = UUID.randomUUID() + "-" + arquivo.getOriginalFilename();
+
+        minioClient.putObject(
+                PutObjectArgs.builder()
+                        .bucket(bucketNameChamado)
+                        .object(nomeArquivo)
+                        .stream(arquivo.getInputStream(), arquivo.getSize(), -1)
+                        .contentType(arquivo.getContentType())
+                        .build()
+        );
+
+        return String.format("%s/%s/%s", minioUrl, bucketNameChamado, nomeArquivo);
+    }
 
     //Método para extrair o nome do arquivo para delete
     private String extrairNomeArquivo(String fotoUrl) {
@@ -277,7 +309,6 @@ public class FotoService {
             System.err.println("Aviso: Não foi possível remover o arquivo antigo do MinIO: " + e.getMessage());
         }
     }
-
     public void deletarEspacoCondominial(String fotoUrl) {
         if (fotoUrl == null || fotoUrl.isBlank()) {
             return;
@@ -296,5 +327,27 @@ public class FotoService {
             System.err.println("Espaço Condominial: Não foi possível remover o arquivo antigo do MinIO: " + e.getMessage());
         }
     }
-}
 
+    public void deletarFotoChamado(String fotoUrl) {
+        if (fotoUrl == null || fotoUrl.isBlank()) {
+            return;
+        }
+
+        try {
+            String nomeArquivo = extrairNomeArquivo(fotoUrl);
+            String bucketImagem = fotoUrl.contains("/" + bucketNameAviso + "/")
+                    ? bucketNameAviso
+                    : bucketNameChamado;
+
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(bucketImagem)
+                            .object(nomeArquivo)
+                            .build()
+            );
+        } catch (Exception e) {
+            System.err.println("Aviso: Não foi possível remover a imagem antiga do chamado no MinIO: "
+                    + e.getMessage());
+        }
+    }
+}
