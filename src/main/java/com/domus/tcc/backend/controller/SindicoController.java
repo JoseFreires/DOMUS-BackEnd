@@ -29,6 +29,17 @@ public class SindicoController {
         return ResponseEntity.ok(admService.listarTodosSindicos());
     }
 
+    @GetMapping("/inativos")
+    public ResponseEntity<List<DadosConsultaPessoaDTO>> listarSindicosInativos() {
+        return ResponseEntity.ok(admService.listarSindicosInativos());
+    }
+
+    @GetMapping("/inativos/{id}")
+    public ResponseEntity<DadosConsultaPessoaDTO> encontrarSindicoInativoPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(admService.buscarSindicoInativoPorId(id));
+    }
+
+
     // Busca um sindico pelo seu id
     @GetMapping("/{id}")
     public ResponseEntity<DadosConsultaPessoaDTO> encontrarSindicoPorId(@PathVariable Long id) {
@@ -53,6 +64,15 @@ public class SindicoController {
         var uri = uriBuilder.path("/sindicos/{id}").buildAndExpand(sindicoDTO.idUsuario()).toUri();
 
         return ResponseEntity.created(uri).body(sindicoDTO);
+    }
+
+    //PATCH Reativar Sindico
+    @PatchMapping("/inativos/reativar/{id}")
+    public ResponseEntity<Void> reativarSindico(
+            @PathVariable Long id) {
+
+        admService.reativarSindico(id);
+        return ResponseEntity.noContent().build();
     }
 
     // Atualiza o sindico
