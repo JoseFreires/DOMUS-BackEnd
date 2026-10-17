@@ -109,6 +109,7 @@ public class PortariaService {
     }
 
 
+
     @Transactional
     public void registrarEntregaEncomenda(Long idEncomenda, DadosAtualizarStatusEncomendaDTO dados) {
 

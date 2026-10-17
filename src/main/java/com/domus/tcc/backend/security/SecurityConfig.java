@@ -48,8 +48,10 @@ public class SecurityConfig {
 
                 // CHAMADOS
                 request.requestMatchers(HttpMethod.POST, "/chamados").hasRole("MORADOR");
+                request.requestMatchers(HttpMethod.PUT, "/chamados/*").hasRole("MORADOR");
+                request.requestMatchers(HttpMethod.DELETE, "/chamados/*").hasRole("MORADOR");
                 request.requestMatchers(HttpMethod.PATCH, "/chamados/*/status")
-                        .hasAnyRole("SINDICO", "ADMIN");
+                        .hasAnyRole("MORADOR", "SINDICO", "ADMIN");
 
                 // ENCOMENDAS
                 request.requestMatchers(HttpMethod.POST, "/encomendas").hasAnyRole("PORTEIRO", "ADMIN");
