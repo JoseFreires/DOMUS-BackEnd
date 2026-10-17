@@ -34,6 +34,11 @@ public class SindicoController {
         return ResponseEntity.ok(admService.listarSindicosInativos());
     }
 
+    @GetMapping("/inativos/{id}")
+    public ResponseEntity<DadosConsultaPessoaDTO> encontrarSindicoInativoPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(admService.buscarSindicoInativoPorId(id));
+    }
+
 
     // Busca um sindico pelo seu id
     @GetMapping("/{id}")
