@@ -3,6 +3,7 @@ package com.domus.tcc.backend.services;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.domus.tcc.backend.dto.response.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,14 +18,6 @@ import com.domus.tcc.backend.dto.request.DadosAtualizacaoMoradorDTO;
 import com.domus.tcc.backend.dto.request.DadosAtualizacaoPorteiroDTO;
 import com.domus.tcc.backend.dto.request.DadosRegistrarMoradorDTO;
 import com.domus.tcc.backend.dto.request.DadosRegistrarPorteiroDTO;
-import com.domus.tcc.backend.dto.response.DadosConsultaBlocoDTO;
-import com.domus.tcc.backend.dto.response.DadosConsultaBlocoMoradiasDTO;
-import com.domus.tcc.backend.dto.response.DadosConsultaEncomendaDTO;
-import com.domus.tcc.backend.dto.response.DadosConsultaMoradiaDTO;
-import com.domus.tcc.backend.dto.response.DadosConsultaMoradiaMoradoresDTO;
-import com.domus.tcc.backend.dto.response.DadosConsultaMoradorDTO;
-import com.domus.tcc.backend.dto.response.DadosConsultaMoradorEncomendasDTO;
-import com.domus.tcc.backend.dto.response.DadosConsultaPorteiroDTO;
 import com.domus.tcc.backend.repository.BlocoRepository;
 import com.domus.tcc.backend.repository.EncomendaRepository;
 import com.domus.tcc.backend.repository.MoradiaRepository;
@@ -167,7 +160,31 @@ public class SindicoService {
                                                         .toList());
     }
 
+    //GET Moradores Inativos
+    @Transactional(readOnly = true)
+    public List<DadosConsultaMoradorDTO> listarMoradoresInativos() {
+        return usuarioRepository.findAll().stream()
+                .filter(usuario -> usuario.getPessoa().getMorador() != null &&
+                        Boolean.FALSE.equals(usuario.getPessoa().getAtivo()))
+                .map(DadosConsultaMoradorDTO::new)
+                .toList();
+    }
 
+    //PATCH Reativar morador
+    @Transactional
+    public DadosConsultaMoradorDTO reativarMorador(Long idMorador){
+
+        Usuario usuario = moradorRepository.findUsuarioByMoradorId(idMorador)
+                .filter(usuario1 -> usuario1.getPessoa().getAtivo() != true)
+                .orElseThrow(() -> new EntityNotFoundException("Morador não encontrado!"));
+
+        var pessoaMorador = usuario.getPessoa();
+
+
+        pessoaMorador.setAtivo(true);
+
+        return new DadosConsultaMoradorDTO(usuario);
+    }
 
     //PUT Morador
     @Transactional
@@ -303,6 +320,29 @@ public class SindicoService {
         return new DadosConsultaPorteiroDTO(usuario);
     }
 
+    //GET List Porteiros Inativados
+    @Transactional(readOnly = true)
+    public List<DadosConsultaPorteiroDTO> listarPorteirosInativos() {
+        return usuarioRepository.findAll().stream()
+                .filter(usuario -> usuario.getPessoa().getPorteiro() != null &&
+                        Boolean.FALSE.equals(usuario.getPessoa().getAtivo()))
+                .map(DadosConsultaPorteiroDTO::new)
+                .toList();
+    }
+
+    //PATCH Reativar Porteiro
+    @Transactional
+    public DadosConsultaPorteiroDTO reativarPorteiro(Long idPorteiro){
+
+        Usuario usuario = porteiroRepository.findUsuarioByPorteiroId(idPorteiro)
+                .orElseThrow(() -> new EntityNotFoundException("Porteiro não encontrado!"));
+
+        var pessoaPorteiro = usuario.getPessoa();
+
+        pessoaPorteiro.setAtivo(true);
+
+        return new DadosConsultaPorteiroDTO(usuario);
+    }
 
     //PUT Porteiro
     @Transactional

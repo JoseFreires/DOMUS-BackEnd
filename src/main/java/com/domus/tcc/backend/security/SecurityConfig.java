@@ -3,6 +3,7 @@ package com.domus.tcc.backend.security;
 import java.util.Arrays;
 import java.util.List;
 
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;    
@@ -42,6 +43,8 @@ public class SecurityConfig {
                     request -> "/auth/eu/perfil".equals(request.getServletPath())
             ))
             .authorizeHttpRequests(request -> {
+                request.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll();
+
                 // Autenticação - permitir acesso público
                 request.requestMatchers(HttpMethod.POST, "/auth/entrar").permitAll();
                 request.requestMatchers(HttpMethod.POST, "/auth/sair").permitAll();
@@ -98,6 +101,9 @@ public class SecurityConfig {
 
                 // LOGS
                 request.requestMatchers(HttpMethod.GET, "/logs").hasAnyRole("ADMIN");
+
+                //Rotas Padrão Todos Usuarios Inativos
+                request.requestMatchers(HttpMethod.GET, "/**/inativos").hasAnyRole("ADMIN", "SINDICO");
 
                 // Resto das requisições requer autenticação
                 request.anyRequest().authenticated();

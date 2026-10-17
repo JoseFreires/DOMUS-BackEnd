@@ -1,6 +1,7 @@
 package com.domus.tcc.backend.controller;
 
 import com.domus.tcc.backend.dto.request.DadosAtualizacaoPorteiroDTO;
+import com.domus.tcc.backend.dto.request.DadosAtualizarStatusEncomendaDTO;
 import com.domus.tcc.backend.dto.response.DadosConsultaPorteiroDTO;
 import com.domus.tcc.backend.dto.request.DadosRegistrarPorteiroDTO;
 import com.domus.tcc.backend.services.SindicoService;
@@ -36,7 +37,13 @@ public class PorteiroController {
         return ResponseEntity.ok(sindicoService.buscarPorteiroPorId(id));
     }
 
-    // Cria um novo porteiro
+    // GET Porteiros Inativos
+    @GetMapping("/inativos")
+    public ResponseEntity<List<DadosConsultaPorteiroDTO>> listarPorteirosInativos() {
+        return ResponseEntity.ok(sindicoService.listarPorteirosInativos());
+    }
+
+     // Cria um novo porteiro
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<DadosConsultaPorteiroDTO> registrarPorteiro(@Valid @ModelAttribute DadosRegistrarPorteiroDTO dados,
                                                                      UriComponentsBuilder uriBuilder,
@@ -53,6 +60,15 @@ public class PorteiroController {
         var uri = uriBuilder.path("/porteiros/{id}").buildAndExpand(porteiroDTO.idUsuario()).toUri();
 
         return ResponseEntity.created(uri).body(porteiroDTO);
+    }
+
+    //PATCH Reativar Porteiro
+    @PatchMapping("/inativos/reativar/{id}")
+    public ResponseEntity<Void> reativarPorteiro(
+            @PathVariable Long id) {
+
+        sindicoService.reativarPorteiro(id);
+        return ResponseEntity.noContent().build();
     }
 
     // Atualiza porteiro por Id

@@ -32,6 +32,11 @@ public class MoradorController {
         return ResponseEntity.ok(sindicoService.listarTodasMoradores());
     }
 
+    @GetMapping("/inativos")
+    public ResponseEntity<List<DadosConsultaMoradorDTO>> listarMoradoresInativos() {
+        return ResponseEntity.ok(sindicoService.listarMoradoresInativos());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<DadosConsultaMoradorDTO> encontrarMoradorPorId(@PathVariable Long id) {
         return ResponseEntity.ok(sindicoService.buscarMoradorPorId(id));
@@ -61,6 +66,15 @@ public class MoradorController {
         var uri = uriBuilder.path("/moradores/{id}").buildAndExpand(moradorDto.idMorador()).toUri();
 
         return ResponseEntity.created(uri).body(moradorDto);
+    }
+
+    //PATCH Reativar Morador
+    @PatchMapping("/inativos/reativar/{id}")
+    public ResponseEntity<Void> reativarMorador(
+            @PathVariable Long id) {
+
+        sindicoService.reativarMorador(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
