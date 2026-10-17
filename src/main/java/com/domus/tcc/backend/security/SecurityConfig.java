@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;    
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
@@ -17,6 +18,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -35,11 +37,21 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(exceptions -> exceptions.defaultAuthenticationEntryPointFor(
+                    new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
+                    request -> "/auth/eu/perfil".equals(request.getServletPath())
+            ))
             .authorizeHttpRequests(request -> {
                 // Autenticação - permitir acesso público
                 request.requestMatchers(HttpMethod.POST, "/auth/entrar").permitAll();
                 request.requestMatchers(HttpMethod.POST, "/auth/sair").permitAll();
                 request.requestMatchers(HttpMethod.GET, "/auth/eu").permitAll();
+                request.requestMatchers(HttpMethod.GET, "/auth/eu/perfil")
+                        .hasAnyRole("MORADOR", "SINDICO", "PORTEIRO", "ADMIN");
+                request.requestMatchers(HttpMethod.PUT, "/auth/eu/perfil")
+                        .hasAnyRole("MORADOR", "SINDICO", "PORTEIRO");
+                request.requestMatchers(HttpMethod.DELETE, "/auth/eu/perfil")
+                        .hasAnyRole("MORADOR", "SINDICO", "PORTEIRO");
                 request.requestMatchers(HttpMethod.POST, "/auth/esqueci-minha-senha").permitAll();
                 request.requestMatchers(HttpMethod.PUT, "/auth/redefinir-senha").permitAll();
                 request.requestMatchers(HttpMethod.PUT, "/auth/aceitar-termos").permitAll();
