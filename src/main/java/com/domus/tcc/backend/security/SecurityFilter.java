@@ -34,7 +34,9 @@ public class SecurityFilter extends OncePerRequestFilter {
             "GET /auth/eu",
             "POST /auth/esqueci-minha-senha",
             "PUT /auth/redefinir-senha",
-            "PUT /auth/aceitar-termos"
+            "PUT /auth/aceitar-termos",
+            "GET /swagger-ui/index.html",
+            "GET /swagger-ui.html"
     );
 
     private boolean isRotaIsenta(HttpServletRequest request) {

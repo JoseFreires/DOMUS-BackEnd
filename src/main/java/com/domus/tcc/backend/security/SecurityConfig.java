@@ -3,6 +3,7 @@ package com.domus.tcc.backend.security;
 import java.util.Arrays;
 import java.util.List;
 
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;    
@@ -42,6 +43,8 @@ public class SecurityConfig {
                     request -> "/auth/eu/perfil".equals(request.getServletPath())
             ))
             .authorizeHttpRequests(request -> {
+                request.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll();
+
                 // Autenticação - permitir acesso público
                 request.requestMatchers(HttpMethod.POST, "/auth/entrar").permitAll();
                 request.requestMatchers(HttpMethod.POST, "/auth/sair").permitAll();
@@ -72,8 +75,23 @@ public class SecurityConfig {
                 request.requestMatchers(HttpMethod.PATCH, "/encomendas/**").hasAnyRole("PORTEIRO", "ADMIN");
                 request.requestMatchers(HttpMethod.DELETE, "/encomendas/**").hasAnyRole("PORTEIRO", "ADMIN");
 
+                // INATIVOS
+                request.requestMatchers(HttpMethod.GET,
+                        "/moradores/inativos/**",
+                        "/porteiros/inativos/**",
+                        "/sindicos/inativos/**",
+                        "/espacos/inativos/**")
+                        .hasAnyRole("ADMIN", "SINDICO");
+                request.requestMatchers(HttpMethod.PATCH,
+                                "/moradores/inativos/**",
+                                "/porteiros/inativos/**",
+                                "/sindicos/inativos/**",
+                                "/espacos/inativos/**")
+                        .hasAnyRole("ADMIN", "SINDICO");
+
+
                 // MORADORES
-                 request.requestMatchers(HttpMethod.POST, "/moradores").hasAnyRole("SINDICO", "ADMIN");
+                request.requestMatchers(HttpMethod.POST, "/moradores").hasAnyRole("SINDICO", "ADMIN");
                 request.requestMatchers(HttpMethod.GET, "/moradores").hasAnyRole("SINDICO", "ADMIN", "PORTEIRO");
                 request.requestMatchers(HttpMethod.GET, "/moradores/**").hasAnyRole("MORADOR", "SINDICO", "ADMIN","PORTEIRO");
                 request.requestMatchers(HttpMethod.PUT, "/moradores/**").hasAnyRole("MORADOR","SINDICO", "ADMIN");
@@ -103,8 +121,18 @@ public class SecurityConfig {
                 request.requestMatchers(HttpMethod.PUT, "/moradias/**").hasAnyRole("ADMIN");
                 request.requestMatchers(HttpMethod.DELETE, "/moradias/**").hasAnyRole("ADMIN");
 
+                //ESPAÇOS CONDOMINIAIS
+                request.requestMatchers(HttpMethod.POST, "/espacos").hasAnyRole("SINDICO", "ADMIN");
+                request.requestMatchers(HttpMethod.GET, "/espacos").hasAnyRole("SINDICO", "ADMIN", "PORTEIRO", "MORADOR");
+                request.requestMatchers(HttpMethod.GET, "/espacos/**").hasAnyRole("MORADOR", "SINDICO", "ADMIN","PORTEIRO");
+                request.requestMatchers(HttpMethod.PUT, "/espacos/**").hasAnyRole("SINDICO", "ADMIN");
+                request.requestMatchers(HttpMethod.DELETE, "/espacos/**").hasAnyRole("ADMIN", "SINDICO");
+
                 // LOGS
                 request.requestMatchers(HttpMethod.GET, "/logs").hasAnyRole("ADMIN");
+
+                //Rotas Padrão Todos Usuarios Inativos
+                request.requestMatchers(HttpMethod.GET, "/**/inativos").hasAnyRole("ADMIN", "SINDICO");
 
                 // Resto das requisições requer autenticação
                 request.anyRequest().authenticated();

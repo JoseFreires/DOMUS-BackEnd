@@ -5,7 +5,10 @@ import com.domus.tcc.backend.domain.Pessoa;
 import com.domus.tcc.backend.dto.request.DadosAtualizacaoPessoaDTO;
 import com.domus.tcc.backend.dto.request.DadosRegistrarPessoaDTO;
 import com.domus.tcc.backend.dto.request.DadosRegistrarSindicoDTO;
+import com.domus.tcc.backend.dto.response.DadosConsultaLogDTO;
 import com.domus.tcc.backend.dto.response.DadosConsultaPessoaDTO;
+import com.domus.tcc.backend.dto.response.DadosConsultaPorteiroDTO;
+import com.domus.tcc.backend.repository.LogSistemaRepository;
 import com.domus.tcc.backend.security.Papel;
 import com.domus.tcc.backend.security.Usuario;
 import com.domus.tcc.backend.repository.PapelRepository;
@@ -35,6 +38,9 @@ public class AdmService {
 
     @Autowired
     private FotoService fotoService;
+
+    @Autowired
+    private LogSistemaRepository logSistemaRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -78,12 +84,57 @@ public class AdmService {
                 .toList();
     }
 
+    //GET List Sindico Inativo
+    @Transactional(readOnly = true)
+    public List<DadosConsultaPessoaDTO> listarSindicosInativos() {
+        return usuarioRepository.findAll().stream()
+                .filter(usuario -> usuario.getPapel() != null
+                        && usuario.getPapel().getNomePapel().equals("ROLE_SINDICO") &&
+                        Boolean.FALSE.equals(usuario.getPessoa().getAtivo()))
+                .map(DadosConsultaPessoaDTO::new)
+                .toList();
+    }
+
+    //GET Sindico inativo por ID
+    @Transactional(readOnly = true)
+    public DadosConsultaPessoaDTO buscarSindicoInativoPorId(Long idSindico) {
+        Usuario usuario = usuarioRepository.findById(idSindico)
+                .filter(sindico -> sindico.getPapel() != null
+                        && "ROLE_SINDICO".equals(sindico.getPapel().getNomePapel())
+                        && Boolean.FALSE.equals(sindico.getPessoa().getAtivo()))
+                .orElseThrow(() -> new EntityNotFoundException("Sindico inativo não encontrado"));
+
+        return new DadosConsultaPessoaDTO(usuario);
+    }
+
+    //GET List Log
+    @Transactional(readOnly = true)
+    public List<DadosConsultaLogDTO> listarLogsSistema() {
+        return logSistemaRepository.findAll().stream()
+                .map(DadosConsultaLogDTO::new)
+                .toList();
+    }
+
     //GET Sindico por Id
     @Transactional(readOnly = true)
     public DadosConsultaPessoaDTO buscarSindicoPorId(Long id) {
         var sindico = usuarioRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Sindico não encontrado"));
         return new DadosConsultaPessoaDTO(sindico);
+    }
+
+    //PATCH Reativar Porteiro
+    @Transactional
+    public DadosConsultaPessoaDTO reativarSindico(Long idSindico){
+
+        Usuario usuario = usuarioRepository.findById(idSindico)
+                .orElseThrow(() -> new EntityNotFoundException("Sindico não encontrado!"));
+
+        var pessoaSindico = usuario.getPessoa();
+
+        pessoaSindico.setAtivo(true);
+
+        return new DadosConsultaPessoaDTO(usuario);
     }
 
     //PUT Sindico

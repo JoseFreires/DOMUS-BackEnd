@@ -98,8 +98,8 @@ public class RedefinicaoSenhaService {
             throw new IllegalArgumentException("As senhas informadas não conferem.");
         }
 
-        if (dados.novaSenha().length() < 8) {
-            throw new IllegalArgumentException("A senha deve ter pelo menos 8 caracteres.");
+        if (dados.novaSenha().length() < 12) {
+            throw new IllegalArgumentException("A senha deve ter pelo menos 12 caracteres.");
         }
 
         if (!dados.novaSenha().matches(".*[A-Z].*")) {
