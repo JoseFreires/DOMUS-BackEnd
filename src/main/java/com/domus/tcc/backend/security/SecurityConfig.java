@@ -61,6 +61,13 @@ public class SecurityConfig {
                 request.requestMatchers(HttpMethod.PUT, "/api/swagger-ui.html").permitAll();
                 request.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll();
 
+                // CHAMADOS
+                request.requestMatchers(HttpMethod.POST, "/chamados").hasRole("MORADOR");
+                request.requestMatchers(HttpMethod.PUT, "/chamados/*").hasRole("MORADOR");
+                request.requestMatchers(HttpMethod.DELETE, "/chamados/*").hasRole("MORADOR");
+                request.requestMatchers(HttpMethod.PATCH, "/chamados/*/status")
+                        .hasAnyRole("MORADOR", "SINDICO", "ADMIN");
+
                 // ENCOMENDAS
                 request.requestMatchers(HttpMethod.POST, "/encomendas").hasAnyRole("PORTEIRO", "ADMIN");
                 request.requestMatchers(HttpMethod.GET, "/encomendas").hasAnyRole("PORTEIRO", "MORADOR", "SINDICO", "ADMIN");
