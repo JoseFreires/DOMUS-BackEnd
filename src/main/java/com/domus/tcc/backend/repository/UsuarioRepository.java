@@ -19,4 +19,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
 
     @Query("SELECT u FROM Usuario u JOIN FETCH u.pessoa JOIN FETCH u.papel WHERE LOWER(u.pessoa.email) = LOWER(:email)")
     Optional<Usuario> findByPessoaEmailIgnoreCase(@Param("email") String email);
+
+    Optional<Usuario> findByPapel_IdPapel(Long idPapel);
+
+    Optional<Usuario> findByPessoa_Id(Long idPessoa);
 }

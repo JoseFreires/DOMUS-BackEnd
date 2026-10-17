@@ -109,6 +109,12 @@
 			<optional>true</optional>
 		</dependency>
 
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+            <!-- Se você já declarou o parent do Spring Boot, a tag <version> abaixo é opcional -->
+            <version>4.1.0</version>
+        </dependency>
 		<!-- Testes -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

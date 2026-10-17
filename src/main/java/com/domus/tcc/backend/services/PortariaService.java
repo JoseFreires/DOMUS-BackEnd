@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.domus.tcc.backend.domain.Encomenda;
 import com.domus.tcc.backend.domain.Pessoa;
 import com.domus.tcc.backend.domain.enums.StatusEncomenda;
+import com.domus.tcc.backend.domain.enums.TipoRetirada;
 import com.domus.tcc.backend.dto.request.DadosAtualizacaoEncomendaDTO;
 import com.domus.tcc.backend.dto.request.DadosAtualizarStatusEncomendaDTO;
 import com.domus.tcc.backend.dto.request.DadosRegistrarEncomendaDTO;
@@ -22,6 +23,7 @@ import com.domus.tcc.backend.repository.EncomendaRepository;
 import com.domus.tcc.backend.repository.PessoaRepository;
 import com.domus.tcc.backend.repository.UsuarioRepository;
 import com.domus.tcc.backend.security.Usuario;
+import com.domus.tcc.backend.util.EmailNotificacaoEvent;
 import com.domus.tcc.backend.util.EncomendaRegistradaEvent;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -122,6 +124,15 @@ public class PortariaService {
         encomenda.setTipoRetirada(dados.tipoRetirada());
 
         encomendaRepository.save(encomenda);
+        if (dados.tipoRetirada() == TipoRetirada.TERCEIRO) {
+            Pessoa destinatario = encomenda.getMoradorDestinatario();
+            applicationEventPublisher.publishEvent(new EmailNotificacaoEvent(
+                    destinatario.getEmail(),
+                    "Sua encomenda foi retirada por terceiro",
+                    "A encomenda \"" + encomenda.getNomePacote()
+                            + "\" foi retirada por terceiro.",
+                    encomenda.getDataHoraRetirado()));
+        }
     }
 
     @Transactional

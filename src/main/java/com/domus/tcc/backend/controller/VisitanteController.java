@@ -32,17 +32,6 @@ public class VisitanteController {
         );
     }
 
-    // Busca visitantes por moradia
-    @GetMapping("/moradia/{idMoradia}")
-    public ResponseEntity<List<DadosConsultaVisitanteDTO>> listarVisitantesPorMoradia(
-            @PathVariable Long idMoradia,
-            @AuthenticationPrincipal Usuario logado) {
-
-        return ResponseEntity.ok(
-                visitanteService.listarVisitantesPorMoradia(idMoradia)
-        );
-    }
-
     // Cria um novo visitante
     @PostMapping
     public ResponseEntity<DadosConsultaVisitanteDTO> registrarVisitante(
