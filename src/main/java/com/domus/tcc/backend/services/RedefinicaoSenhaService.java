@@ -15,7 +15,7 @@ import jakarta.persistence.EntityNotFoundException;
 @Service
 public class RedefinicaoSenhaService {
 
-    private static final String FRONTEND_RESET_URL = "http://localhost:3000/redefinir-senha?token=";
+    private static final String FRONTEND_RESET_URL = "http://localhost:3000/pages/recuperarSenha?token=";
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
