@@ -1,7 +1,6 @@
 package com.domus.tcc.backend.dto.response;
 
-import java.util.List;
-
+import com.domus.tcc.backend.domain.Moradia;
 import com.domus.tcc.backend.domain.Visitante;
 
 public record DadosConsultaVisitanteDTO(
@@ -11,21 +10,19 @@ public record DadosConsultaVisitanteDTO(
         String dataHoraChegada,
         Long idTipoVisita,
         Long idPorteiro,
-        List<Long> idsMoradias
+        Long idMoradia
 
 ) {
 
-    public DadosConsultaVisitanteDTO(Visitante visitante) {
+    public DadosConsultaVisitanteDTO(Visitante visitante, Moradia moradia) {
         this(
             visitante.getId(),
             visitante.getNome(),
             visitante.getDataHoraChegada().toString(),
             visitante.getIdTipoVisita(),
             visitante.getPorteiro().getId(),
-            visitante.getMoradias()
-                    .stream()
-                    .map(moradia -> moradia.getId())
-                    .toList()
+            moradia.getId()
         );
     }
+
 }
