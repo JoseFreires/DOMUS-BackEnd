@@ -13,7 +13,8 @@ import java.util.Optional;
 
 @Repository
 public interface MoradorRepository extends JpaRepository<Morador, Long>{
+    Optional<Morador> findByPessoa_Id(Long idPessoa);
+
     @Query("SELECT u FROM Usuario u WHERE u.pessoa.morador.id = :idMorador")
     Optional<Usuario> findUsuarioByMoradorId(@Param("idMorador") Long idMorador);
 }
-

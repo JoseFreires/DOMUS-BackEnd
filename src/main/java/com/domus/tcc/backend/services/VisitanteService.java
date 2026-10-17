@@ -49,11 +49,11 @@ public class VisitanteService {
 
         var visitante = new Visitante(dados, porteiro);
 
-        visitante.getMoradias().add(moradia);
+
 
         visitanteRepository.save(visitante);
 
-        return new DadosConsultaVisitanteDTO(visitante);
+        return new DadosConsultaVisitanteDTO(visitante, moradia);
     }
 
     /*
@@ -64,24 +64,8 @@ public class VisitanteService {
 
         return visitanteRepository.findAll()
                 .stream()
-                .map(DadosConsultaVisitanteDTO::new)
-                .toList();
-    }
-
-    /*
-     * GET: retorna os visitantes associados a uma moradia.
-     */
-    @Transactional(readOnly = true)
-    public List<DadosConsultaVisitanteDTO> listarVisitantesPorMoradia(
-            Long idMoradia) {
-
-        if (!moradiaRepository.existsById(idMoradia)) {
-            throw new EntityNotFoundException("Moradia não encontrada.");
-        }
-
-        return visitanteRepository.findByMoradiasId(idMoradia)
-                .stream()
-                .map(DadosConsultaVisitanteDTO::new)
+                .flatMap(visitante -> visitante.getMoradias().stream()
+                        .map(moradia -> new DadosConsultaVisitanteDTO(visitante, moradia)))
                 .toList();
     }
 }
