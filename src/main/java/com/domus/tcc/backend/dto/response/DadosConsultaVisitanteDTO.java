@@ -9,8 +9,12 @@ public record DadosConsultaVisitanteDTO(
         String nome,
         String dataHoraChegada,
         Long idTipoVisita,
+        String nomeTipoVisita,
         Long idPorteiro,
-        Long idMoradia
+        String nomePorteiro,
+        Long idMoradia,
+        String moradia,
+        String bloco
 
 ) {
 
@@ -19,9 +23,13 @@ public record DadosConsultaVisitanteDTO(
             visitante.getId(),
             visitante.getNome(),
             visitante.getDataHoraChegada().toString(),
-            visitante.getIdTipoVisita(),
+            visitante.getTipoVisita().getId(),
+            visitante.getTipoVisita().getNomeVisita(),
             visitante.getPorteiro().getId(),
-            moradia.getId()
+            visitante.getPorteiro().getPessoa().getNomeCompleto(),
+            moradia.getId(),
+            moradia.getNumero(),
+            moradia.getBloco().getNome_torre()
         );
     }
 

@@ -40,8 +40,9 @@ public class Visitante {
     @Column(name = "data_hora_chegada", nullable = false)
     private LocalDateTime dataHoraChegada;
 
-    @Column(name = "tipo_visita_idtipo_visita", nullable = false)
-    private Long idTipoVisita;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tipo_visita_idtipo_visita", nullable = false)
+    private TipoVisita tipoVisita;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_usuario_porteiro", nullable = false)
@@ -61,13 +62,10 @@ public class Visitante {
     )
     private List<Moradia> moradias = new ArrayList<>();
 
-    public Visitante(
-            DadosRegistrarVisitanteDTO dados,
-            Usuario porteiro) {
-
+    public Visitante(DadosRegistrarVisitanteDTO dados, Usuario porteiro, TipoVisita tipoVisita) {
         this.nome = dados.nome();
         this.dataHoraChegada = LocalDateTime.now();
-        this.idTipoVisita = dados.idTipoVisita();
+        this.tipoVisita = tipoVisita;
         this.porteiro = porteiro;
     }
 }

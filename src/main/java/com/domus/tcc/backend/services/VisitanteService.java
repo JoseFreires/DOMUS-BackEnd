@@ -12,6 +12,7 @@ import com.domus.tcc.backend.domain.Visitante;
 import com.domus.tcc.backend.dto.request.DadosRegistrarVisitanteDTO;
 import com.domus.tcc.backend.dto.response.DadosConsultaVisitanteDTO;
 import com.domus.tcc.backend.repository.MoradiaRepository;
+import com.domus.tcc.backend.repository.TipoVisitaRepository;
 import com.domus.tcc.backend.repository.UsuarioRepository;
 import com.domus.tcc.backend.repository.VisitanteRepository;
 import com.domus.tcc.backend.security.Usuario;
@@ -30,6 +31,9 @@ public class VisitanteService {
     @Autowired
     private MoradiaRepository moradiaRepository;
 
+    @Autowired
+    private TipoVisitaRepository tipoVisitaRepository;
+
     /*
      * POST: registra um visitante e associa o visitante a uma moradia.
      */
@@ -43,11 +47,15 @@ public class VisitanteService {
                 .orElseThrow(() ->
                         new EntityNotFoundException("Moradia não encontrada."));
 
+        var tipoVisita = tipoVisitaRepository.findById(dados.idTipoVisita())
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Tipo de visita não encontrado."));
+
         var porteiro = usuarioRepository.findById(logado.getId())
                 .orElseThrow(() ->
                         new EntityNotFoundException("Porteiro não encontrado."));
 
-        var visitante = new Visitante(dados, porteiro);
+        var visitante = new Visitante(dados, porteiro, tipoVisita);
 
 
 
