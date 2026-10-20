@@ -57,7 +57,7 @@ public class VisitanteService {
 
         var visitante = new Visitante(dados, porteiro, tipoVisita);
 
-
+        visitante.getMoradias().add(moradia);
 
         visitanteRepository.save(visitante);
 
