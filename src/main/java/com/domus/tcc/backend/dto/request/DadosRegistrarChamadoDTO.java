@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-public record DadosRegistrarChamado(
+public record DadosRegistrarChamadoDTO(
 
         @NotBlank(message = "O titulo do Chamado é obrigatório")
         @Size(max = 45, message = "O título deve ter no máximo 45 caracteres")

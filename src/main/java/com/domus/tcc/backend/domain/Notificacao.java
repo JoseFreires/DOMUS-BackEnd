@@ -27,18 +27,18 @@ public class Notificacao {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_usuario", nullable = false)
-    private Usuario usuario;
+    @JoinColumn(name = "id_usuario_destinatario", nullable = false)
+    private Usuario usuarioDestinatario;
 
     @Column(name = "descricao", nullable = false, length = 255)
     private String descricao;
 
-    @Column(name = "data_hora", nullable = false)
-    private LocalDateTime dataHora;
+    @Column(name = "data_hora_chegada", nullable = false)
+    private LocalDateTime dataHoraChegada;
 
-    public Notificacao(Usuario usuario, String descricao) {
-        this.usuario = usuario;
+    public Notificacao(Usuario usuarioDestinatario, String descricao) {
+        this.usuarioDestinatario = usuarioDestinatario;
         this.descricao = descricao;
-        this.dataHora = LocalDateTime.now();
+        this.dataHoraChegada = LocalDateTime.now();
     }
 }

@@ -5,7 +5,8 @@ import com.domus.tcc.backend.domain.Morador;
 import com.domus.tcc.backend.domain.enums.StatusChamado;
 import com.domus.tcc.backend.dto.request.DadosAtualizarStatusChamadoDTO;
 import com.domus.tcc.backend.dto.request.DadosAtualizacaoChamadoDTO;
-import com.domus.tcc.backend.dto.request.DadosRegistrarChamado;
+import com.domus.tcc.backend.dto.request.DadosConclusaoChamadoDTO;
+import com.domus.tcc.backend.dto.request.DadosRegistrarChamadoDTO;
 import com.domus.tcc.backend.dto.response.DadosConsultaChamadoDTO;
 import com.domus.tcc.backend.dto.response.DadosNotificacaoChamadoDTO;
 import com.domus.tcc.backend.repository.ChamadoRepository;
@@ -59,7 +60,7 @@ public class ChamadoService {
 
     @Transactional
     public DadosConsultaChamadoDTO registrarChamado(
-            DadosRegistrarChamado dados, Usuario logado, MultipartFile arquivo) {
+            DadosRegistrarChamadoDTO dados, Usuario logado, MultipartFile arquivo) {
 
         Usuario usuarioLogado = usuarioRepository.findById(logado.getId())
                 .orElseThrow(() -> new EntityNotFoundException("Usuário autenticado não encontrado"));
@@ -114,17 +115,59 @@ public class ChamadoService {
             return reabrirChamado(chamado, dados, usuarioMorador);
         }
 
+        if (dados.statusChamado() == StatusChamado.CONCLUIDO) {
+            throw new ResponseStatusException(
+                    BAD_REQUEST, "Use a operação de conclusão para informar a resolução do chamado");
+        }
+
         if (chamado.getStatusChamado() == dados.statusChamado()) {
             return new DadosConsultaChamadoDTO(chamado);
         }
 
         chamado.setStatusChamado(dados.statusChamado());
-        chamado.setDataHoraFinalizado(
-                dados.statusChamado() == StatusChamado.CONCLUIDO
-                        ? LocalDateTime.now()
-                        : null);
+        chamado.setDataHoraFinalizado(null);
         chamadoRepository.save(chamado);
 
+        notificarAtualizacaoStatus(chamado, false);
+        return new DadosConsultaChamadoDTO(chamado);
+    }
+
+    @Transactional
+    public DadosConsultaChamadoDTO concluirChamado(
+            Long id, DadosConclusaoChamadoDTO dados, UserDetails logado) {
+
+        Chamado chamado = chamadoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Chamado não encontrado"));
+
+        boolean podeConcluir = logado.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_SINDICO".equals(authority.getAuthority())
+                        || "ROLE_ADMIN".equals(authority.getAuthority()));
+        if (!podeConcluir) {
+            throw new ResponseStatusException(
+                    FORBIDDEN, "Somente síndicos ou administradores podem concluir chamados");
+        }
+        if (!StringUtils.hasText(dados.resolucaoChamado())) {
+            throw new ResponseStatusException(BAD_REQUEST, "A resolução do chamado é obrigatória");
+        }
+        if (dados.resolucaoChamado().length() > 1000) {
+            throw new ResponseStatusException(
+                    BAD_REQUEST, "A resolução deve ter no máximo 1000 caracteres");
+        }
+
+        if (chamado.getStatusChamado() == StatusChamado.CONCLUIDO) {
+            return new DadosConsultaChamadoDTO(chamado);
+        }
+
+        chamado.setStatusChamado(StatusChamado.CONCLUIDO);
+        chamado.setDataHoraFinalizado(LocalDateTime.now());
+        chamado.setResolucaoChamado(dados.resolucaoChamado());
+        chamadoRepository.save(chamado);
+
+        notificarAtualizacaoStatus(chamado, true);
+        return new DadosConsultaChamadoDTO(chamado);
+    }
+
+    private void notificarAtualizacaoStatus(Chamado chamado, boolean concluido) {
         Usuario morador = usuarioRepository.findByPessoa_Id(chamado.getMorador().getPessoa().getId())
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Usuário associado ao morador que abriu o chamado não encontrado"));
@@ -137,14 +180,13 @@ public class ChamadoService {
                 "STATUS_ATUALIZADO",
                 descricao,
                 chamadoDTO));
-        if (dados.statusChamado() == StatusChamado.CONCLUIDO) {
+        if (concluido) {
             applicationEventPublisher.publishEvent(new EmailNotificacaoEvent(
                     morador.getPessoa().getEmail(),
                     "Seu chamado foi concluído",
                     descricao,
                     chamado.getDataHoraFinalizado()));
         }
-        return chamadoDTO;
     }
 
     @Transactional
@@ -237,11 +279,21 @@ public class ChamadoService {
                 + " " + acao + " o chamado #" + chamado.getId() + " (\""
                 + chamado.getTitulo() + "\")."
                 + (complemento == null ? "" : " " + complemento);
+        if ("reabriu".equals(acao)) {
+            descricao = "REABERTURA: " + descricao;
+        }
         notificacaoService.registrar(chamado.getSindico(), descricao);
         notificar(chamado.getSindico(), new DadosNotificacaoChamadoDTO(
                 "STATUS_ATUALIZADO",
                 descricao,
                 chamadoDTO));
+        if ("reabriu".equals(acao)) {
+            applicationEventPublisher.publishEvent(new EmailNotificacaoEvent(
+                    chamado.getSindico().getPessoa().getEmail(),
+                    "Chamado reaberto",
+                    descricao,
+                    LocalDateTime.now()));
+        }
     }
 
     private void notificar(Usuario destinatario, DadosNotificacaoChamadoDTO notificacao) {
@@ -252,18 +304,56 @@ public class ChamadoService {
     }
 
     @Transactional(readOnly = true)
-    public List<DadosConsultaChamadoDTO> listarChamados() {
-        return chamadoRepository.findAll()
-                .stream()
+    public List<DadosConsultaChamadoDTO> listarChamados(UserDetails logado) {
+        List<Chamado> chamados;
+        if (podeConsultarTodos(logado)) {
+            chamados = chamadoRepository.findAll();
+        } else if (ehMorador(logado)) {
+            if (!(logado instanceof Usuario usuarioMorador)) {
+                throw new ResponseStatusException(FORBIDDEN, "Usuário autenticado não é um morador");
+            }
+            Morador morador = buscarMoradorDoUsuario(usuarioMorador);
+            chamados = chamadoRepository.findByMorador_Id(morador.getId());
+        } else {
+            throw new ResponseStatusException(FORBIDDEN, "Usuário não pode consultar chamados");
+        }
+        return chamados.stream()
                 .map(DadosConsultaChamadoDTO::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public DadosConsultaChamadoDTO buscarChamadoPorId(Long id) {
+    public DadosConsultaChamadoDTO buscarChamadoPorId(Long id, UserDetails logado) {
         var chamado = chamadoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Chamado não encontrada"));
+        if (ehMorador(logado)) {
+            if (!(logado instanceof Usuario usuarioMorador)) {
+                throw new ResponseStatusException(FORBIDDEN, "Usuário autenticado não é um morador");
+            }
+            validarProprietario(chamado, usuarioMorador);
+        } else if (!podeConsultarTodos(logado)) {
+            throw new ResponseStatusException(FORBIDDEN, "Usuário não pode consultar chamados");
+        }
         return new DadosConsultaChamadoDTO(chamado);
+    }
+
+    private boolean podeConsultarTodos(UserDetails logado) {
+        return logado.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_SINDICO".equals(authority.getAuthority())
+                        || "ROLE_ADMIN".equals(authority.getAuthority()));
+    }
+
+    private boolean ehMorador(UserDetails logado) {
+        return logado.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_MORADOR".equals(authority.getAuthority()));
+    }
+
+    private Morador buscarMoradorDoUsuario(Usuario usuario) {
+        Usuario usuarioAutenticado = usuarioRepository.findById(usuario.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Usuário autenticado não encontrado"));
+        return moradorRepository.findByPessoa_Id(usuarioAutenticado.getPessoa().getId())
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Morador associado ao usuário não encontrado"));
     }
 
 

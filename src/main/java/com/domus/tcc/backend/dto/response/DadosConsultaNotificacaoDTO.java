@@ -7,10 +7,10 @@ import java.time.LocalDateTime;
 public record DadosConsultaNotificacaoDTO(
         Long idNotificacao,
         String descricao,
-        LocalDateTime dataHora
+        LocalDateTime dataHoraChegada
 ) {
 
     public DadosConsultaNotificacaoDTO(Notificacao notificacao) {
-        this(notificacao.getId(), notificacao.getDescricao(), notificacao.getDataHora());
+        this(notificacao.getId(), notificacao.getDescricao(), notificacao.getDataHoraChegada());
     }
 }

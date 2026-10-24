@@ -18,7 +18,8 @@ public record DadosConsultaChamadoDTO(
         LocalDateTime dataHoraAbertura,
         LocalDateTime dataHoraFinalizado,
         String nomeMorador,
-        String nomeSindico
+        String nomeSindico,
+        String resolucaoChamado
 ) {
     public DadosConsultaChamadoDTO(Chamado chamado) {
         this(
@@ -33,7 +34,8 @@ public record DadosConsultaChamadoDTO(
                 chamado.getDataHoraAbertura(),
                 chamado.getDataHoraFinalizado(),
                 chamado.getMorador().getPessoa().getNomeCompleto(),
-                chamado.getSindico().getPessoa().getNomeCompleto()
+                chamado.getSindico().getPessoa().getNomeCompleto(),
+                chamado.getResolucaoChamado()
         );
     }
 }

@@ -2,7 +2,8 @@ package com.domus.tcc.backend.controller;
 
 import com.domus.tcc.backend.dto.request.DadosAtualizarStatusChamadoDTO;
 import com.domus.tcc.backend.dto.request.DadosAtualizacaoChamadoDTO;
-import com.domus.tcc.backend.dto.request.DadosRegistrarChamado;
+import com.domus.tcc.backend.dto.request.DadosConclusaoChamadoDTO;
+import com.domus.tcc.backend.dto.request.DadosRegistrarChamadoDTO;
 import com.domus.tcc.backend.dto.response.DadosConsultaChamadoDTO;
 import com.domus.tcc.backend.security.Usuario;
 import com.domus.tcc.backend.services.ChamadoService;
@@ -28,7 +29,7 @@ public class ChamadoController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<DadosConsultaChamadoDTO> registrarChamado(
-            @Valid @ModelAttribute DadosRegistrarChamado dados,
+            @Valid @ModelAttribute DadosRegistrarChamadoDTO dados,
             UriComponentsBuilder uriBuilder,
             @AuthenticationPrincipal Usuario logado,
             @RequestParam(value = "arquivo", required = false) MultipartFile arquivo,
@@ -52,6 +53,15 @@ public class ChamadoController {
         return ResponseEntity.ok(chamadoService.atualizarStatusChamado(id, dados, logado));
     }
 
+    @PatchMapping("/{id}/concluir")
+    public ResponseEntity<DadosConsultaChamadoDTO> concluirChamado(
+            @PathVariable Long id,
+            @Valid @RequestBody DadosConclusaoChamadoDTO dados,
+            @AuthenticationPrincipal UserDetails logado) {
+
+        return ResponseEntity.ok(chamadoService.concluirChamado(id, dados, logado));
+    }
+
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<DadosConsultaChamadoDTO> editarChamado(
             @PathVariable Long id,
@@ -73,12 +83,15 @@ public class ChamadoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<DadosConsultaChamadoDTO>> listarChamados(){
-        return ResponseEntity.ok(chamadoService.listarChamados());
+    public ResponseEntity<List<DadosConsultaChamadoDTO>> listarChamados(
+            @AuthenticationPrincipal UserDetails logado) {
+        return ResponseEntity.ok(chamadoService.listarChamados(logado));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DadosConsultaChamadoDTO> encontrarChamadoPorId(@PathVariable Long id) {
-        return ResponseEntity.ok(chamadoService.buscarChamadoPorId(id));
+    public ResponseEntity<DadosConsultaChamadoDTO> encontrarChamadoPorId(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails logado) {
+        return ResponseEntity.ok(chamadoService.buscarChamadoPorId(id, logado));
     }
 }

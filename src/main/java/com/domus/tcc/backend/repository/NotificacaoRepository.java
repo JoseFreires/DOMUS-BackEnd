@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface NotificacaoRepository extends JpaRepository<Notificacao, Long> {
 
-    List<Notificacao> findByUsuario_IdOrderByDataHoraDesc(Long usuarioId);
+    List<Notificacao> findByUsuarioDestinatario_IdOrderByDataHoraChegadaDesc(Long usuarioId);
 }

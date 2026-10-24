@@ -8,7 +8,8 @@ import com.domus.tcc.backend.domain.enums.TipoChamado;
 import com.domus.tcc.backend.security.Papel;
 import com.domus.tcc.backend.dto.request.DadosAtualizacaoChamadoDTO;
 import com.domus.tcc.backend.dto.request.DadosAtualizarStatusChamadoDTO;
-import com.domus.tcc.backend.dto.request.DadosRegistrarChamado;
+import com.domus.tcc.backend.dto.request.DadosRegistrarChamadoDTO;
+import com.domus.tcc.backend.dto.request.DadosConclusaoChamadoDTO;
 import com.domus.tcc.backend.dto.response.DadosNotificacaoChamadoDTO;
 import com.domus.tcc.backend.repository.ChamadoRepository;
 import com.domus.tcc.backend.repository.MoradorRepository;
@@ -89,7 +90,7 @@ class ChamadoServiceNotificationTest {
         });
 
         chamadoService.registrarChamado(
-                new DadosRegistrarChamado("Barulho", "Barulho após as 22h", TipoChamado.RECLAMACAO),
+                new DadosRegistrarChamadoDTO("Barulho", "Barulho após as 22h", TipoChamado.RECLAMACAO),
                 moradorUsuario,
                 arquivo);
 
@@ -113,7 +114,7 @@ class ChamadoServiceNotificationTest {
     }
 
     @Test
-    void deveNotificarMoradorQuandoSindicoAtualizaStatus() {
+    void deveNotificarMoradorQuandoSindicoConcluiChamado() {
         Usuario moradorUsuario = criarUsuario(1L, "morador@domus.com", 10L, "Morador");
         Usuario sindico = criarUsuario(2L, "sindico@domus.com", 20L, "Síndico");
         Morador morador = new Morador();
@@ -133,11 +134,12 @@ class ChamadoServiceNotificationTest {
         when(chamadoRepository.findById(100L)).thenReturn(Optional.of(chamado));
         when(usuarioRepository.findByPessoa_Id(10L)).thenReturn(Optional.of(moradorUsuario));
 
-        chamadoService.atualizarStatusChamado(
+        var resultado = chamadoService.concluirChamado(
                 100L,
-                new DadosAtualizarStatusChamadoDTO(StatusChamado.CONCLUIDO, null),
+                new DadosConclusaoChamadoDTO("A manutenção foi realizada."),
                 criarUsuarioComPapel(2L, "sindico@domus.com", 20L, "Síndico", "ROLE_SINDICO"));
 
+        assertEquals("A manutenção foi realizada.", resultado.resolucaoChamado());
         ArgumentCaptor<Object> payload = ArgumentCaptor.forClass(Object.class);
         verify(simpMessagingTemplate).convertAndSendToUser(
                 org.mockito.ArgumentMatchers.eq("morador@domus.com"),
@@ -148,6 +150,8 @@ class ChamadoServiceNotificationTest {
                 assertInstanceOf(DadosNotificacaoChamadoDTO.class, payload.getValue());
         assertEquals("STATUS_ATUALIZADO", notificacao.tipo());
         assertEquals(StatusChamado.CONCLUIDO, notificacao.chamado().statusChamado());
+        assertEquals("A manutenção foi realizada.", notificacao.chamado().resolucaoChamado());
+        assertEquals("A manutenção foi realizada.", chamado.getResolucaoChamado());
         assertEquals(
                 "O status do chamado #100 (\"Barulho\") foi atualizado para CONCLUIDO.",
                 notificacao.mensagem());
@@ -155,6 +159,147 @@ class ChamadoServiceNotificationTest {
                 moradorUsuario,
                 "O status do chamado #100 (\"Barulho\") foi atualizado para CONCLUIDO.");
         verify(applicationEventPublisher).publishEvent(any(EmailNotificacaoEvent.class));
+    }
+
+    @Test
+    void deveRejeitarResolucaoEmBrancoAoConcluirChamado() {
+        Chamado chamado = criarChamado(criarMorador(
+                criarUsuario(1L, "morador@domus.com", 10L, "Morador")), StatusChamado.ABERTO);
+        when(chamadoRepository.findById(100L)).thenReturn(Optional.of(chamado));
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> chamadoService.concluirChamado(
+                        100L,
+                        new DadosConclusaoChamadoDTO("  "),
+                        criarUsuarioComPapel(
+                                2L, "sindico@domus.com", 20L, "Síndico", "ROLE_SINDICO")));
+
+        assertEquals(400, exception.getStatusCode().value());
+        verify(chamadoRepository, never()).save(any(Chamado.class));
+        verify(applicationEventPublisher, never()).publishEvent(any(EmailNotificacaoEvent.class));
+    }
+
+    @Test
+    void deveRejeitarResolucaoComMaisDeMilCaracteres() {
+        Chamado chamado = criarChamado(criarMorador(
+                criarUsuario(1L, "morador@domus.com", 10L, "Morador")), StatusChamado.ABERTO);
+        when(chamadoRepository.findById(100L)).thenReturn(Optional.of(chamado));
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> chamadoService.concluirChamado(
+                        100L,
+                        new DadosConclusaoChamadoDTO("R".repeat(1001)),
+                        criarUsuarioComPapel(
+                                2L, "sindico@domus.com", 20L, "Síndico", "ROLE_SINDICO")));
+
+        assertEquals(400, exception.getStatusCode().value());
+        verify(chamadoRepository, never()).save(any(Chamado.class));
+    }
+
+    @Test
+    void deveImpedirConclusaoPeloEndpointGenericoDeStatus() {
+        Chamado chamado = criarChamado(criarMorador(
+                criarUsuario(1L, "morador@domus.com", 10L, "Morador")), StatusChamado.ABERTO);
+        when(chamadoRepository.findById(100L)).thenReturn(Optional.of(chamado));
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> chamadoService.atualizarStatusChamado(
+                        100L,
+                        new DadosAtualizarStatusChamadoDTO(StatusChamado.CONCLUIDO, null),
+                        criarUsuarioComPapel(
+                                2L, "sindico@domus.com", 20L, "Síndico", "ROLE_SINDICO")));
+
+        assertEquals(400, exception.getStatusCode().value());
+        verify(chamadoRepository, never()).save(any(Chamado.class));
+    }
+
+    @Test
+    void devePermitirSindicoAlterarChamadoParaTratandoSemDescricao() {
+        Usuario moradorUsuario = criarUsuario(1L, "morador@domus.com", 10L, "Morador");
+        Chamado chamado = criarChamado(criarMorador(moradorUsuario), StatusChamado.ABERTO);
+        when(chamadoRepository.findById(100L)).thenReturn(Optional.of(chamado));
+        when(usuarioRepository.findByPessoa_Id(10L)).thenReturn(Optional.of(moradorUsuario));
+
+        var resultado = chamadoService.atualizarStatusChamado(
+                100L,
+                new DadosAtualizarStatusChamadoDTO(StatusChamado.TRATANDO, null),
+                criarUsuarioComPapel(
+                        2L, "sindico@domus.com", 20L, "Síndico", "ROLE_SINDICO"));
+
+        assertEquals(StatusChamado.TRATANDO, resultado.statusChamado());
+        assertEquals("Barulho após as 22h", resultado.descricao());
+        assertEquals(null, resultado.resolucaoChamado());
+        verify(chamadoRepository).save(chamado);
+    }
+
+    @Test
+    void deveListarSomenteChamadosDoMoradorAutenticado() {
+        Usuario moradorUsuario = criarUsuarioComPapel(
+                1L, "morador@domus.com", 10L, "Morador", "ROLE_MORADOR");
+        Morador morador = criarMorador(moradorUsuario);
+        Chamado chamadoProprio = criarChamado(morador, StatusChamado.ABERTO);
+        autenticarMorador(moradorUsuario, morador);
+        when(chamadoRepository.findByMorador_Id(30L)).thenReturn(java.util.List.of(chamadoProprio));
+
+        var resultado = chamadoService.listarChamados(moradorUsuario);
+
+        assertEquals(1, resultado.size());
+        assertEquals(100L, resultado.get(0).idChamado());
+        verify(chamadoRepository).findByMorador_Id(30L);
+        verify(chamadoRepository, never()).findAll();
+    }
+
+    @Test
+    void deveImpedirMoradorDeConsultarChamadoDeOutroPorId() {
+        Usuario moradorUsuario = criarUsuarioComPapel(
+                1L, "morador@domus.com", 10L, "Morador", "ROLE_MORADOR");
+        Usuario donoChamadoUsuario = criarUsuario(3L, "dono@domus.com", 30L, "Dono");
+        Morador donoChamado = criarMorador(donoChamadoUsuario);
+        donoChamado.setId(31L);
+        Chamado chamado = criarChamado(donoChamado, StatusChamado.ABERTO);
+        autenticarMorador(moradorUsuario, criarMorador(moradorUsuario));
+        when(chamadoRepository.findById(100L)).thenReturn(Optional.of(chamado));
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> chamadoService.buscarChamadoPorId(100L, moradorUsuario));
+
+        assertEquals(403, exception.getStatusCode().value());
+    }
+
+    @Test
+    void devePermitirSindicoListarTodosOsChamados() {
+        Usuario sindico = criarUsuarioComPapel(
+                2L, "sindico@domus.com", 20L, "Síndico", "ROLE_SINDICO");
+        Morador morador = criarMorador(
+                criarUsuario(1L, "morador@domus.com", 10L, "Morador"));
+        when(chamadoRepository.findAll()).thenReturn(java.util.List.of(
+                criarChamado(morador, StatusChamado.ABERTO),
+                criarChamado(morador, StatusChamado.TRATANDO)));
+
+        var resultado = chamadoService.listarChamados(sindico);
+
+        assertEquals(2, resultado.size());
+        verify(chamadoRepository).findAll();
+        verify(chamadoRepository, never()).findByMorador_Id(any());
+    }
+
+    @Test
+    void devePermitirAdministradorConsultarChamadoPorId() {
+        Usuario administrador = criarUsuarioComPapel(
+                4L, "admin@domus.com", 40L, "Administrador", "ROLE_ADMIN");
+        Chamado chamado = criarChamado(
+                criarMorador(criarUsuario(1L, "morador@domus.com", 10L, "Morador")),
+                StatusChamado.ABERTO);
+        when(chamadoRepository.findById(100L)).thenReturn(Optional.of(chamado));
+
+        var resultado = chamadoService.buscarChamadoPorId(100L, administrador);
+
+        assertEquals(100L, resultado.idChamado());
+        verify(moradorRepository, never()).findByPessoa_Id(any());
     }
 
     @Test
@@ -248,6 +393,7 @@ class ChamadoServiceNotificationTest {
         Usuario moradorUsuario = criarUsuario(1L, "morador@domus.com", 10L, "Morador");
         adicionarPapel(moradorUsuario, "ROLE_MORADOR");
         Usuario sindico = criarUsuario(2L, "sindico@domus.com", 20L, "Síndico");
+        sindico.getPessoa().setEmail("sindico@domus.com");
         Morador morador = criarMorador(moradorUsuario);
         Chamado chamado = criarChamado(morador, StatusChamado.CONCLUIDO);
         chamado.setSindico(sindico);
@@ -267,6 +413,22 @@ class ChamadoServiceNotificationTest {
         assertEquals(StatusChamado.ABERTO, resultado.statusChamado());
         assertEquals("O problema continua acontecendo.", resultado.descricao());
         verify(chamadoRepository).save(chamado);
+        String mensagem = "REABERTURA: O morador Morador reabriu o chamado #100 (\"Barulho\"). "
+                + "Justificativa: O problema continua acontecendo.";
+        verify(notificacaoService).registrar(sindico, mensagem);
+        verify(simpMessagingTemplate).convertAndSendToUser(
+                org.mockito.ArgumentMatchers.eq("sindico@domus.com"),
+                org.mockito.ArgumentMatchers.eq(DESTINO_NOTIFICACOES),
+                org.mockito.ArgumentMatchers.argThat(payload ->
+                        payload instanceof DadosNotificacaoChamadoDTO notificacao
+                                && mensagem.equals(notificacao.mensagem())
+                                && StatusChamado.ABERTO.equals(notificacao.chamado().statusChamado())));
+        ArgumentCaptor<EmailNotificacaoEvent> eventoEmail =
+                ArgumentCaptor.forClass(EmailNotificacaoEvent.class);
+        verify(applicationEventPublisher).publishEvent(eventoEmail.capture());
+        assertEquals("sindico@domus.com", eventoEmail.getValue().destinatario());
+        assertEquals("Chamado reaberto", eventoEmail.getValue().assunto());
+        assertEquals(mensagem, eventoEmail.getValue().mensagem());
     }
 
     @Test

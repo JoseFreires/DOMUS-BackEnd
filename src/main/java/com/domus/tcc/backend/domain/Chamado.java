@@ -2,7 +2,7 @@ package com.domus.tcc.backend.domain;
 
 import com.domus.tcc.backend.domain.enums.StatusChamado;
 import com.domus.tcc.backend.domain.enums.TipoChamado;
-import com.domus.tcc.backend.dto.request.DadosRegistrarChamado;
+import com.domus.tcc.backend.dto.request.DadosRegistrarChamadoDTO;
 import com.domus.tcc.backend.security.Usuario;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -56,6 +56,9 @@ public class Chamado {
     @Column(name = "data_hora_finalizado")
     private LocalDateTime dataHoraFinalizado;
 
+    @Column(name = "resolucao_chamado", length = 1000)
+    private String resolucaoChamado;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "morador_idMorador", nullable = false)
     private Morador morador;
@@ -64,7 +67,7 @@ public class Chamado {
     @JoinColumn(name = "id_usuario_sindico", nullable = false)
     private Usuario sindico;
 
-    public Chamado(DadosRegistrarChamado dados, String imagem, Usuario sindico, Morador morador) {
+    public Chamado(DadosRegistrarChamadoDTO dados, String imagem, Usuario sindico, Morador morador) {
         this.titulo = dados.titulo();
         this.descricao = dados.descricao();
         this.tipoChamado = dados.tipoChamado();

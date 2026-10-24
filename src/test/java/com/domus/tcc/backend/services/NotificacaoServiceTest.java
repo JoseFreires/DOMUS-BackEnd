@@ -44,7 +44,7 @@ class NotificacaoServiceTest {
 
         ArgumentCaptor<Notificacao> captor = ArgumentCaptor.forClass(Notificacao.class);
         verify(notificacaoRepository).save(captor.capture());
-        assertEquals(usuario, captor.getValue().getUsuario());
+        assertEquals(usuario, captor.getValue().getUsuarioDestinatario());
         assertEquals("Novo aviso publicado: Manutenção", captor.getValue().getDescricao());
         verify(messagingTemplate).convertAndSendToUser(
                 eq("morador@domus.com"),
@@ -57,12 +57,12 @@ class NotificacaoServiceTest {
         Usuario usuario = new Usuario();
         usuario.setId(7L);
         Notificacao notificacao = new Notificacao(usuario, "Chamado concluído");
-        when(notificacaoRepository.findByUsuario_IdOrderByDataHoraDesc(7L))
+        when(notificacaoRepository.findByUsuarioDestinatario_IdOrderByDataHoraChegadaDesc(7L))
                 .thenReturn(List.of(notificacao));
 
         List<DadosConsultaNotificacaoDTO> resultado = notificacaoService.listarDoUsuario(7L);
 
         assertEquals("Chamado concluído", resultado.get(0).descricao());
-        assertEquals(notificacao.getDataHora(), resultado.get(0).dataHora());
+        assertEquals(notificacao.getDataHoraChegada(), resultado.get(0).dataHoraChegada());
     }
 }

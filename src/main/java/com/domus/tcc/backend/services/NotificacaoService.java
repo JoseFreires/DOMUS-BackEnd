@@ -42,7 +42,7 @@ public class NotificacaoService {
 
     @Transactional(readOnly = true)
     public List<DadosConsultaNotificacaoDTO> listarDoUsuario(Long usuarioId) {
-        return notificacaoRepository.findByUsuario_IdOrderByDataHoraDesc(usuarioId)
+        return notificacaoRepository.findByUsuarioDestinatario_IdOrderByDataHoraChegadaDesc(usuarioId)
                 .stream()
                 .map(DadosConsultaNotificacaoDTO::new)
                 .toList();

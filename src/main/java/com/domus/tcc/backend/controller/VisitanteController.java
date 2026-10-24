@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.domus.tcc.backend.dto.request.DadosRegistrarVisitanteDTO;
+import com.domus.tcc.backend.dto.request.DadosAtualizacaoVisitanteDTO;
 import com.domus.tcc.backend.dto.response.DadosConsultaVisitanteDTO;
 import com.domus.tcc.backend.security.Usuario;
 import com.domus.tcc.backend.services.VisitanteService;
@@ -47,5 +48,13 @@ public class VisitanteController {
                 .toUri();
 
         return ResponseEntity.created(uri).body(visitanteDto);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<DadosConsultaVisitanteDTO> atualizarVisitante(
+            @PathVariable Long id,
+            @Valid @RequestBody DadosAtualizacaoVisitanteDTO dados) {
+
+        return ResponseEntity.ok(visitanteService.atualizarVisitante(id, dados));
     }
 }
