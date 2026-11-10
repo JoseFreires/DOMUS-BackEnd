@@ -28,7 +28,7 @@ public class AvisoController {
         return ResponseEntity.ok(avisoService.listarTodosAvisosCondominiais());
     }
 
-    @GetMapping("/desativados")
+    @GetMapping("/inativos")
     public ResponseEntity<List<DadosConsultaAvisoDTO>> listarAvisosNaoAtivos() {
         return ResponseEntity.ok(avisoService.listarTodosAvisosNaoAtivos());
     }

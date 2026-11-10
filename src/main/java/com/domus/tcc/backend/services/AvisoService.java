@@ -168,6 +168,9 @@ public class AvisoService {
         }
 
         if (dados.dataValidadeAviso() != null) {
+            if (dados.dataValidadeAviso().isBefore(LocalDate.now()) || dados.dataValidadeAviso().isEqual(LocalDate.now())) {
+                throw new IllegalArgumentException("A data de validade não pode ser anterior ou igual a hoje.");
+            }
             aviso.setDataValidadeAviso(dados.dataValidadeAviso());
         }
 

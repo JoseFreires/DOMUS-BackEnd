@@ -6,6 +6,7 @@ import java.util.Set;
 import com.domus.tcc.backend.domain.ContaAdm;
 import com.domus.tcc.backend.repository.ContaAdmRepository;
 import jakarta.servlet.http.Cookie;
+import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,7 +21,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-
+@AllArgsConstructor
 @Component
 public class SecurityFilter extends OncePerRequestFilter {
 
@@ -44,13 +45,6 @@ public class SecurityFilter extends OncePerRequestFilter {
         return ROTAS_ISENTAS.contains(request.getMethod().toUpperCase() + " " + path);
     }
 
-    public SecurityFilter(UsuarioRepository usuarioRepository,
-                          ContaAdmRepository contaAdmRepository,
-                          TokenService tokenService) {
-        this.usuarioRepository = usuarioRepository;
-        this.contaAdmRepository = contaAdmRepository;
-        this.tokenService = tokenService;
-    }
 
     private void responderTermosNaoAceitos(HttpServletResponse response) throws IOException {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
