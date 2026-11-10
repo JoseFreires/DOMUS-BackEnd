@@ -28,7 +28,9 @@ public record DadosConsultaPorteiroDTO(
 
         LocalDate dataNascimento,
 
-        String fotoPerfil
+        String fotoPerfil,
+
+        Boolean ativo
 
 ) {// Construtor
     public DadosConsultaPorteiroDTO(Usuario usuario) {
@@ -43,7 +45,8 @@ public record DadosConsultaPorteiroDTO(
                 usuario.getPessoa().getEmail(),
                 usuario.getPessoa().getTelefone(),
                 usuario.getPessoa().getDataNascimento(),
-                usuario.getPessoa().getFotoPerfil()
+                usuario.getPessoa().getFotoPerfil(),
+                usuario.getPessoa().getAtivo()
 
         );
     }

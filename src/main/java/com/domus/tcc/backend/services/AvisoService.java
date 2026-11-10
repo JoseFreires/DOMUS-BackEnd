@@ -2,6 +2,7 @@ package com.domus.tcc.backend.services;
 
 import com.domus.tcc.backend.domain.AvisoCondominial;
 import com.domus.tcc.backend.domain.Condominio;
+import com.domus.tcc.backend.domain.Morador;
 import com.domus.tcc.backend.dto.request.DadosAtualizacaoAvisoDTO;
 import com.domus.tcc.backend.dto.request.DadosRegistrarAvisoDTO;
 import com.domus.tcc.backend.dto.response.DadosConsultaAvisoDTO;
@@ -41,6 +42,9 @@ public class AvisoService {
     @Autowired
     private FotoService fotoService;
 
+    @Autowired
+    private NotificacaoService notificacaoService;
+
     //POST Bill
     @PreAuthorize("hasRole('SINDICO')")
     @Transactional
@@ -75,20 +79,33 @@ public class AvisoService {
         avisosRepository.save(aviso);
 
 
-        List<String> emailsMoradores = condominio.getBlocos().stream()
+        List<Morador> moradores = condominio.getBlocos().stream()
                 .flatMap(bloco -> bloco.getMoradias().stream())
                 .flatMap(moradia -> moradia.getMoradores().stream())
-                .map(morador -> morador.getPessoa().getEmail())
+                .toList();
+        List<Usuario> usuariosMoradores = moradores.stream()
+                .map(morador -> usuarioRepository.findByPessoa_Id(morador.getPessoa().getId()))
+                .flatMap(java.util.Optional::stream)
+                .distinct()
                 .toList();
 
-        applicationEventPublisher.publishEvent(new AvisoRegistradoEvent(
-                emailsMoradores,
-                dados.titulo(),
-                sindico.getPessoa().getNomeCompleto(),
-                LocalDateTime.now().format(formatter),
-                dados.dataValidadeAviso().format(formatterData)
+        String descricao = (Boolean.TRUE.equals(aviso.getPrioridade())
+                ? "Novo aviso prioritário: "
+                : "Novo aviso publicado: ") + aviso.getTitulo();
+        usuariosMoradores.forEach(usuario -> notificacaoService.notificar(usuario, descricao));
 
-        ));
+        if (Boolean.TRUE.equals(aviso.getPrioridade())) {
+            List<String> emailsMoradores = moradores.stream()
+                    .map(morador -> morador.getPessoa().getEmail())
+                    .filter(email -> email != null && !email.isBlank())
+                    .toList();
+            applicationEventPublisher.publishEvent(new AvisoRegistradoEvent(
+                    emailsMoradores,
+                    dados.titulo(),
+                    sindico.getPessoa().getNomeCompleto(),
+                    LocalDateTime.now().format(formatter),
+                    dados.dataValidadeAviso().format(formatterData)));
+        }
 
     return new DadosConsultaAvisoDTO(aviso);
     }

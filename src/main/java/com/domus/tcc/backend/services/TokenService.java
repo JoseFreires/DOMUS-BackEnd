@@ -36,11 +36,12 @@ public class TokenService{
             String nome = usuario.getPessoa().getNomeCompleto();
 
             return JWT.create()
-                .withIssuer("Hermes")
+                .withIssuer("Domus")
                 .withSubject(usuario.getUsername()) 
                 .withClaim("roles", roles)
                     .withClaim("nome", nome)
-                .withExpiresAt(Expiracao())
+                    .withClaim("termosAceitos", usuario.isTermosAceitos())
+                    .withExpiresAt(Expiracao())
                 .sign(algorithm);
 
                 
@@ -65,7 +66,7 @@ public class TokenService{
             String nome = contaAdm.getNomeConta();
 
             return JWT.create()
-                    .withIssuer("Hermes")
+                    .withIssuer("Domus")
                     .withSubject(contaAdm.getUsername())
                     .withClaim("roles", roles)
                     .withClaim("nome", nome)
@@ -86,7 +87,7 @@ public class TokenService{
             Algorithm algorithm = Algorithm.HMAC256(segredo.trim());
 
             return JWT.create()
-                    .withIssuer("Hermes")
+                    .withIssuer("Domus")
                     .withSubject(username)
                     .withClaim("tipo", "redefinicao_senha")
                     .withExpiresAt(ExpiracaoRedefinicaoSenha())
@@ -100,7 +101,7 @@ public class TokenService{
         try {
             Algorithm algorithm = Algorithm.HMAC256(segredo.trim());
             var decoded = JWT.require(algorithm)
-                    .withIssuer("Hermes")
+                    .withIssuer("Domus")
                     .build()
                     .verify(tokenJwt);
 
@@ -133,7 +134,7 @@ public class TokenService{
         try {
             Algorithm  algorithm = Algorithm.HMAC256(segredo.trim());
             return   JWT.require(algorithm)
-                .withIssuer("Hermes")
+                .withIssuer("Domus")
                 .build()
                 .verify(tokenJwt)
                 .getSubject();

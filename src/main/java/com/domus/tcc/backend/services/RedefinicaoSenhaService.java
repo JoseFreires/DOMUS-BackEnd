@@ -15,7 +15,7 @@ import jakarta.persistence.EntityNotFoundException;
 @Service
 public class RedefinicaoSenhaService {
 
-    private static final String FRONTEND_RESET_URL = "http://localhost:3000/redefinir-senha?token=";
+    private static final String FRONTEND_RESET_URL = "http://localhost:3000/pages/recuperarSenha?token=";
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
@@ -98,8 +98,8 @@ public class RedefinicaoSenhaService {
             throw new IllegalArgumentException("As senhas informadas não conferem.");
         }
 
-        if (dados.novaSenha().length() < 8) {
-            throw new IllegalArgumentException("A senha deve ter pelo menos 8 caracteres.");
+        if (dados.novaSenha().length() < 12) {
+            throw new IllegalArgumentException("A senha deve ter pelo menos 12 caracteres.");
         }
 
         if (!dados.novaSenha().matches(".*[A-Z].*")) {
