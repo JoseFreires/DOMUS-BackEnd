@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -33,6 +34,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
+                .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exceptions -> exceptions.defaultAuthenticationEntryPointFor(
@@ -41,6 +43,7 @@ public class SecurityConfig {
                 ))
                 .authorizeHttpRequests(request -> {
                     request.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll();
+                    request.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
 
                     request.requestMatchers(HttpMethod.POST, "/auth/entrar").permitAll();
                     request.requestMatchers(HttpMethod.POST, "/auth/sair").permitAll();
