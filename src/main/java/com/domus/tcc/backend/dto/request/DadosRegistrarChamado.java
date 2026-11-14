@@ -13,9 +13,11 @@ public record DadosRegistrarChamado(
 
         @NotBlank(message = "A descrição do Chamado é obrigatória")
         @Size(max = 300, message = "A descrição deve ter no máximo 300 caracteres")
-        String descricao,
+        String descricaoInicial,
 
         @NotNull(message = "O Tipo do Chamado é obrigatório")
-        TipoChamado tipoChamado
+        TipoChamado tipoChamado,
+
+        String imagem
 ) {
 }

@@ -8,7 +8,7 @@ public record DadosAtualizarStatusChamadoDTO(
         @NotNull(message = "O status do chamado é obrigatório")
         StatusChamado statusChamado,
 
-        @Size(max = 300, message = "A descrição deve ter no máximo 300 caracteres")
-        String descricao
+        @Size(max = 1000, message = "A resolução deve ter no máximo 1000 caracteres")
+        String resolucaoChamado
 ) {
 }

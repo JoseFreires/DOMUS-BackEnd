@@ -5,14 +5,15 @@ import com.domus.tcc.backend.domain.Morador;
 import com.domus.tcc.backend.domain.Pessoa;
 import com.domus.tcc.backend.domain.enums.StatusChamado;
 import com.domus.tcc.backend.domain.enums.TipoChamado;
-import com.domus.tcc.backend.security.Papel;
 import com.domus.tcc.backend.dto.request.DadosAtualizacaoChamadoDTO;
 import com.domus.tcc.backend.dto.request.DadosAtualizarStatusChamadoDTO;
 import com.domus.tcc.backend.dto.request.DadosRegistrarChamado;
 import com.domus.tcc.backend.dto.response.DadosNotificacaoChamadoDTO;
+import com.domus.tcc.backend.exception.StatusInvalidoException;
 import com.domus.tcc.backend.repository.ChamadoRepository;
 import com.domus.tcc.backend.repository.MoradorRepository;
 import com.domus.tcc.backend.repository.UsuarioRepository;
+import com.domus.tcc.backend.security.Papel;
 import com.domus.tcc.backend.security.Usuario;
 import com.domus.tcc.backend.util.EmailNotificacaoEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -32,6 +33,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -89,7 +91,11 @@ class ChamadoServiceNotificationTest {
         });
 
         chamadoService.registrarChamado(
-                new DadosRegistrarChamado("Barulho", "Barulho após as 22h", TipoChamado.RECLAMACAO),
+                new DadosRegistrarChamado(
+                        "Barulho",
+                        "Abri um chamado anterior que foi concluído (100), mas o problema não foi resolvido.",
+                        TipoChamado.RECLAMACAO,
+                        null),
                 moradorUsuario,
                 arquivo);
 
@@ -103,6 +109,9 @@ class ChamadoServiceNotificationTest {
                 assertInstanceOf(DadosNotificacaoChamadoDTO.class, payload.getValue());
         assertEquals("NOVO_CHAMADO", notificacao.tipo());
         assertEquals(100L, notificacao.chamado().idChamado());
+        assertEquals(
+                "Abri um chamado anterior que foi concluído (100), mas o problema não foi resolvido.",
+                notificacao.chamado().descricaoInicial());
         assertEquals("http://minio/chamados/chamado.jpg", notificacao.chamado().imagem());
         verify(fotoService).uploadFotoChamado(arquivo);
         verify(notificacaoService).registrar(sindico, "Morador abriu o chamado #100: Barulho");
@@ -113,9 +122,9 @@ class ChamadoServiceNotificationTest {
     }
 
     @Test
-    void deveNotificarMoradorQuandoSindicoAtualizaStatus() {
+    void deveNotificarMoradorQuandoPorteiroConcluiChamadoComResolucao() {
         Usuario moradorUsuario = criarUsuario(1L, "morador@domus.com", 10L, "Morador");
-        Usuario sindico = criarUsuario(2L, "sindico@domus.com", 20L, "Síndico");
+        Usuario porteiro = criarUsuarioComPapel(2L, "porteiro@domus.com", 20L, "Porteiro", "ROLE_PORTEIRO");
         Morador morador = new Morador();
         morador.setId(30L);
         morador.setPessoa(moradorUsuario.getPessoa());
@@ -123,21 +132,25 @@ class ChamadoServiceNotificationTest {
         Chamado chamado = new Chamado();
         chamado.setId(100L);
         chamado.setTitulo("Barulho");
-        chamado.setDescricao("Barulho após as 22h");
+        chamado.setDescricaoInicial("Barulho após as 22h");
         chamado.setTipoChamado(TipoChamado.RECLAMACAO);
-        chamado.setStatusChamado(StatusChamado.ABERTO);
+        chamado.setStatusChamado(StatusChamado.TRATANDO);
         chamado.setDataHoraAbertura(LocalDateTime.now());
         chamado.setMorador(morador);
-        chamado.setSindico(sindico);
+        chamado.setSindico(porteiro);
 
         when(chamadoRepository.findById(100L)).thenReturn(Optional.of(chamado));
+        when(chamadoRepository.save(chamado)).thenReturn(chamado);
         when(usuarioRepository.findByPessoa_Id(10L)).thenReturn(Optional.of(moradorUsuario));
 
-        chamadoService.atualizarStatusChamado(
+        var resultado = chamadoService.atualizarStatusChamado(
                 100L,
-                new DadosAtualizarStatusChamadoDTO(StatusChamado.CONCLUIDO, null),
-                criarUsuarioComPapel(2L, "sindico@domus.com", 20L, "Síndico", "ROLE_SINDICO"));
+                new DadosAtualizarStatusChamadoDTO(StatusChamado.CONCLUIDO, "Ruído resolvido."),
+                porteiro);
 
+        assertEquals(StatusChamado.CONCLUIDO, resultado.statusChamado());
+        assertEquals("Ruído resolvido.", resultado.resolucaoChamado());
+        assertEquals("Barulho após as 22h", resultado.descricaoInicial());
         ArgumentCaptor<Object> payload = ArgumentCaptor.forClass(Object.class);
         verify(simpMessagingTemplate).convertAndSendToUser(
                 org.mockito.ArgumentMatchers.eq("morador@domus.com"),
@@ -166,16 +179,17 @@ class ChamadoServiceNotificationTest {
         autenticarMorador(moradorUsuario, morador);
         when(chamadoRepository.findById(100L)).thenReturn(Optional.of(chamado));
 
-        ResponseStatusException exception = assertThrows(
-                ResponseStatusException.class,
+        StatusInvalidoException exception = assertThrows(
+                StatusInvalidoException.class,
                 () -> chamadoService.editarChamado(
                         100L,
                         new DadosAtualizacaoChamadoDTO(
-                                "Novo título", "Nova descrição", TipoChamado.SUGESTAO),
+                                "Novo título", "Nova descrição", TipoChamado.SUGESTAO, null),
                         moradorUsuario,
                         null));
 
-        assertEquals(409, exception.getStatusCode().value());
+        assertEquals("Somente chamados com status ABERTO podem ser alterados ou cancelados",
+                exception.getMessage());
         verify(chamadoRepository, never()).save(any(Chamado.class));
     }
 
@@ -197,7 +211,7 @@ class ChamadoServiceNotificationTest {
         var resultado = chamadoService.editarChamado(
                 100L,
                 new DadosAtualizacaoChamadoDTO(
-                        "Barulho", "Barulho após as 22h", TipoChamado.RECLAMACAO),
+                        "Barulho", "Barulho após as 22h", TipoChamado.RECLAMACAO, null),
                 moradorUsuario,
                 arquivo);
 
@@ -210,14 +224,19 @@ class ChamadoServiceNotificationTest {
 
     @Test
     void deveCancelarChamadoAbertoSemApagaLo() {
-        Usuario moradorUsuario = criarUsuario(1L, "morador@domus.com", 10L, "Morador");
+        Usuario moradorUsuario = criarUsuarioComPapel(
+                1L, "morador@domus.com", 10L, "Morador", "ROLE_MORADOR");
         Morador morador = criarMorador(moradorUsuario);
         Chamado chamado = criarChamado(morador, StatusChamado.ABERTO);
 
         autenticarMorador(moradorUsuario, morador);
         when(chamadoRepository.findById(100L)).thenReturn(Optional.of(chamado));
+        when(chamadoRepository.save(chamado)).thenReturn(chamado);
 
-        chamadoService.cancelarChamado(100L, moradorUsuario);
+        chamadoService.atualizarStatusChamado(
+                100L,
+                new DadosAtualizarStatusChamadoDTO(StatusChamado.CANCELADO, null),
+                moradorUsuario);
 
         assertEquals(StatusChamado.CANCELADO, chamado.getStatusChamado());
         verify(chamadoRepository).save(chamado);
@@ -225,7 +244,8 @@ class ChamadoServiceNotificationTest {
 
     @Test
     void deveImpedirMoradorDeAlterarChamadoDeOutroMorador() {
-        Usuario outroMorador = criarUsuario(3L, "outro@domus.com", 30L, "Outro morador");
+        Usuario outroMorador = criarUsuarioComPapel(
+                3L, "outro@domus.com", 30L, "Outro morador", "ROLE_MORADOR");
         Morador donoChamado = criarMorador(
                 criarUsuario(1L, "morador@domus.com", 10L, "Morador"));
         Morador moradorAutenticado = criarMorador(outroMorador);
@@ -237,57 +257,152 @@ class ChamadoServiceNotificationTest {
 
         ResponseStatusException exception = assertThrows(
                 ResponseStatusException.class,
-                () -> chamadoService.cancelarChamado(100L, outroMorador));
+                () -> chamadoService.atualizarStatusChamado(
+                        100L,
+                        new DadosAtualizarStatusChamadoDTO(StatusChamado.CANCELADO, null),
+                        outroMorador));
 
         assertEquals(403, exception.getStatusCode().value());
         verify(chamadoRepository, never()).save(any(Chamado.class));
     }
 
     @Test
-    void deveReabrirChamadoConcluidoComDescricaoComoJustificativa() {
-        Usuario moradorUsuario = criarUsuario(1L, "morador@domus.com", 10L, "Morador");
-        adicionarPapel(moradorUsuario, "ROLE_MORADOR");
-        Usuario sindico = criarUsuario(2L, "sindico@domus.com", 20L, "Síndico");
+    void deveListarSomenteChamadosDoMoradorAutenticado() {
+        Usuario moradorUsuario = criarUsuarioComPapel(
+                1L, "morador@domus.com", 10L, "Morador", "ROLE_MORADOR");
         Morador morador = criarMorador(moradorUsuario);
-        Chamado chamado = criarChamado(morador, StatusChamado.CONCLUIDO);
-        chamado.setSindico(sindico);
-        chamado.setDataHoraFinalizado(LocalDateTime.now());
+        Chamado chamado = criarChamado(morador, StatusChamado.ABERTO);
 
         autenticarMorador(moradorUsuario, morador);
-        when(chamadoRepository.findById(100L)).thenReturn(Optional.of(chamado));
-        when(chamadoRepository.save(any(Chamado.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(chamadoRepository.findAllByStatusChamadoAndMorador_Id(StatusChamado.ABERTO, 30L))
+                .thenReturn(java.util.List.of(chamado));
 
-        var resultado = chamadoService.atualizarStatusChamado(
-                100L,
-                new DadosAtualizarStatusChamadoDTO(
-                        StatusChamado.ABERTO, "O problema continua acontecendo."),
-                moradorUsuario);
+        var resultado = chamadoService.listarChamados(StatusChamado.ABERTO, moradorUsuario);
 
-        assertEquals(StatusChamado.ABERTO, resultado.statusChamado());
-        assertEquals("O problema continua acontecendo.", resultado.descricao());
-        verify(chamadoRepository).save(chamado);
+        assertEquals(1, resultado.size());
+        assertEquals(100L, resultado.get(0).idChamado());
+        verify(chamadoRepository).findAllByStatusChamadoAndMorador_Id(StatusChamado.ABERTO, 30L);
+        verify(chamadoRepository, never()).findAll();
     }
 
     @Test
-    void deveExigirDescricaoParaReabrirChamado() {
-        Usuario moradorUsuario = criarUsuario(1L, "morador@domus.com", 10L, "Morador");
-        adicionarPapel(moradorUsuario, "ROLE_MORADOR");
-        Morador morador = criarMorador(moradorUsuario);
-        Chamado chamado = criarChamado(morador, StatusChamado.CONCLUIDO);
+    void deveImpedirMoradorDeConsultarChamadoDeOutroMorador() {
+        Usuario outroMorador = criarUsuarioComPapel(
+                3L, "outro@domus.com", 30L, "Outro morador", "ROLE_MORADOR");
+        Morador moradorAutenticado = criarMorador(outroMorador);
+        moradorAutenticado.setId(31L);
+        Morador donoChamado = criarMorador(
+                criarUsuario(1L, "morador@domus.com", 10L, "Morador"));
+        Chamado chamado = criarChamado(donoChamado, StatusChamado.ABERTO);
 
-        autenticarMorador(moradorUsuario, morador);
+        autenticarMorador(outroMorador, moradorAutenticado);
+        when(chamadoRepository.findById(100L)).thenReturn(Optional.of(chamado));
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> chamadoService.buscarChamadoPorId(100L, outroMorador));
+
+        assertEquals(403, exception.getStatusCode().value());
+    }
+
+    @Test
+    void deveImpedirMoradorDeEditarChamadoDeOutroMorador() {
+        Usuario outroMorador = criarUsuarioComPapel(
+                3L, "outro@domus.com", 30L, "Outro morador", "ROLE_MORADOR");
+        Morador moradorAutenticado = criarMorador(outroMorador);
+        moradorAutenticado.setId(31L);
+        Morador donoChamado = criarMorador(
+                criarUsuario(1L, "morador@domus.com", 10L, "Morador"));
+        Chamado chamado = criarChamado(donoChamado, StatusChamado.ABERTO);
+
+        autenticarMorador(outroMorador, moradorAutenticado);
+        when(chamadoRepository.findById(100L)).thenReturn(Optional.of(chamado));
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> chamadoService.editarChamado(
+                        100L,
+                        new DadosAtualizacaoChamadoDTO(
+                                "Novo título", "Nova descrição", TipoChamado.SUGESTAO, null),
+                        outroMorador,
+                        null));
+
+        assertEquals(403, exception.getStatusCode().value());
+        verify(chamadoRepository, never()).save(any(Chamado.class));
+    }
+
+    @Test
+    void deveImpedirSindicoDeCancelarChamado() {
+        Usuario sindico = criarUsuarioComPapel(2L, "sindico@domus.com", 20L, "Síndico", "ROLE_SINDICO");
+        Chamado chamado = criarChamado(
+                criarMorador(criarUsuario(1L, "morador@domus.com", 10L, "Morador")),
+                StatusChamado.ABERTO);
         when(chamadoRepository.findById(100L)).thenReturn(Optional.of(chamado));
 
         ResponseStatusException exception = assertThrows(
                 ResponseStatusException.class,
                 () -> chamadoService.atualizarStatusChamado(
-                        100L,
-                        new DadosAtualizarStatusChamadoDTO(StatusChamado.ABERTO, "  "),
-                        moradorUsuario));
+                        100L, new DadosAtualizarStatusChamadoDTO(StatusChamado.CANCELADO, null), sindico));
+
+        assertEquals(403, exception.getStatusCode().value());
+        verify(chamadoRepository, never()).save(any(Chamado.class));
+    }
+
+    @Test
+    void deveImpedirConclusaoAntesDeTratar() {
+        Chamado chamado = criarChamado(criarMorador(
+                criarUsuario(1L, "morador@domus.com", 10L, "Morador")), StatusChamado.ABERTO);
+        Usuario sindico = criarUsuarioComPapel(2L, "sindico@domus.com", 20L, "Síndico", "ROLE_SINDICO");
+        when(chamadoRepository.findById(100L)).thenReturn(Optional.of(chamado));
+
+        assertThrows(StatusInvalidoException.class, () -> chamadoService.atualizarStatusChamado(
+                100L, new DadosAtualizarStatusChamadoDTO(StatusChamado.CONCLUIDO, "Resolvido"), sindico));
+        verify(chamadoRepository, never()).save(any(Chamado.class));
+    }
+
+    @Test
+    void deveTratarChamadoComPorteiroSemAlterarOutrosCampos() {
+        Usuario moradorUsuario = criarUsuario(1L, "morador@domus.com", 10L, "Morador");
+        Morador morador = criarMorador(moradorUsuario);
+        Chamado chamado = criarChamado(morador, StatusChamado.ABERTO);
+        Usuario porteiro = criarUsuarioComPapel(3L, "porteiro@domus.com", 30L, "Porteiro", "ROLE_PORTEIRO");
+
+        when(chamadoRepository.findById(100L)).thenReturn(Optional.of(chamado));
+        when(chamadoRepository.save(chamado)).thenReturn(chamado);
+        when(usuarioRepository.findByPessoa_Id(10L)).thenReturn(Optional.of(moradorUsuario));
+
+        chamadoService.atualizarStatusChamado(
+                100L, new DadosAtualizarStatusChamadoDTO(StatusChamado.TRATANDO, null), porteiro);
+
+        assertEquals(StatusChamado.TRATANDO, chamado.getStatusChamado());
+        assertEquals("Barulho após as 22h", chamado.getDescricaoInicial());
+        assertNull(chamado.getResolucaoChamado());
+        assertNull(chamado.getDataHoraFinalizado());
+    }
+
+    @Test
+    void deveExigirResolucaoApenasAoConcluir() {
+        Chamado chamado = criarChamado(criarMorador(
+                criarUsuario(1L, "morador@domus.com", 10L, "Morador")), StatusChamado.TRATANDO);
+        Usuario porteiro = criarUsuarioComPapel(3L, "porteiro@domus.com", 30L, "Porteiro", "ROLE_PORTEIRO");
+        when(chamadoRepository.findById(100L)).thenReturn(Optional.of(chamado));
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> chamadoService.atualizarStatusChamado(
+                        100L, new DadosAtualizarStatusChamadoDTO(StatusChamado.CONCLUIDO, "  "), porteiro));
 
         assertEquals(400, exception.getStatusCode().value());
         verify(chamadoRepository, never()).save(any(Chamado.class));
+    }
+
+    private Usuario criarUsuarioComPapel(
+            Long id, String username, Long pessoaId, String nome, String nomePapel) {
+        Usuario usuario = criarUsuario(id, username, pessoaId, nome);
+        Papel papel = new Papel();
+        papel.setNomePapel(nomePapel);
+        usuario.setPapel(papel);
+        return usuario;
     }
 
     private Morador criarMorador(Usuario usuario) {
@@ -301,7 +416,7 @@ class ChamadoServiceNotificationTest {
         Chamado chamado = new Chamado();
         chamado.setId(100L);
         chamado.setTitulo("Barulho");
-        chamado.setDescricao("Barulho após as 22h");
+        chamado.setDescricaoInicial("Barulho após as 22h");
         chamado.setTipoChamado(TipoChamado.RECLAMACAO);
         chamado.setStatusChamado(status);
         chamado.setDataHoraAbertura(LocalDateTime.now());
@@ -328,16 +443,4 @@ class ChamadoServiceNotificationTest {
         return usuario;
     }
 
-    private Usuario criarUsuarioComPapel(
-            Long id, String username, Long pessoaId, String nome, String nomePapel) {
-        Usuario usuario = criarUsuario(id, username, pessoaId, nome);
-        adicionarPapel(usuario, nomePapel);
-        return usuario;
-    }
-
-    private void adicionarPapel(Usuario usuario, String nomePapel) {
-        Papel papel = new Papel();
-        papel.setNomePapel(nomePapel);
-        usuario.setPapel(papel);
-    }
 }

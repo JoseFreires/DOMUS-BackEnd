@@ -12,9 +12,11 @@ public record DadosAtualizacaoChamadoDTO(
 
         @NotBlank(message = "A descrição do chamado é obrigatória")
         @Size(max = 300, message = "A descrição deve ter no máximo 300 caracteres")
-        String descricao,
+        String descricaoInicial,
 
         @NotNull(message = "O tipo do chamado é obrigatório")
-        TipoChamado tipoChamado
+        TipoChamado tipoChamado,
+
+        String imagem
 ) {
 }
