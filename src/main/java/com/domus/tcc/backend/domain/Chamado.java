@@ -36,8 +36,11 @@ public class Chamado {
     @Column(name = "titulo", nullable = false, length = 45)
     private String titulo;
 
-    @Column(name = "descricao", nullable = false, length = 300)
-    private String descricao;
+    @Column(name = "descricao_inicial", nullable = false, length = 300)
+    private String descricaoInicial;
+
+    @Column(name = "resolucao_chamado", length = 1000)
+    private String resolucaoChamado;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_chamado", nullable = false)
@@ -66,7 +69,7 @@ public class Chamado {
 
     public Chamado(DadosRegistrarChamado dados, String imagem, Usuario sindico, Morador morador) {
         this.titulo = dados.titulo();
-        this.descricao = dados.descricao();
+        this.descricaoInicial = dados.descricaoInicial();
         this.tipoChamado = dados.tipoChamado();
         this.statusChamado = StatusChamado.ABERTO;
         this.imagem = imagem;

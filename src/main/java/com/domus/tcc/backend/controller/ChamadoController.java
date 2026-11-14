@@ -1,7 +1,8 @@
 package com.domus.tcc.backend.controller;
 
-import com.domus.tcc.backend.dto.request.DadosAtualizarStatusChamadoDTO;
+import com.domus.tcc.backend.domain.enums.StatusChamado;
 import com.domus.tcc.backend.dto.request.DadosAtualizacaoChamadoDTO;
+import com.domus.tcc.backend.dto.request.DadosAtualizarStatusChamadoDTO;
 import com.domus.tcc.backend.dto.request.DadosRegistrarChamado;
 import com.domus.tcc.backend.dto.response.DadosConsultaChamadoDTO;
 import com.domus.tcc.backend.security.Usuario;
@@ -48,7 +49,6 @@ public class ChamadoController {
             @PathVariable Long id,
             @Valid @RequestBody DadosAtualizarStatusChamadoDTO dados,
             @AuthenticationPrincipal UserDetails logado) {
-
         return ResponseEntity.ok(chamadoService.atualizarStatusChamado(id, dados, logado));
     }
 
@@ -64,21 +64,17 @@ public class ChamadoController {
         return ResponseEntity.ok(chamadoService.editarChamado(id, dados, logado, fotoRecebida));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> cancelarChamado(
-            @PathVariable Long id,
-            @AuthenticationPrincipal Usuario logado) {
-        chamadoService.cancelarChamado(id, logado);
-        return ResponseEntity.noContent().build();
-    }
-
     @GetMapping
-    public ResponseEntity<List<DadosConsultaChamadoDTO>> listarChamados(){
-        return ResponseEntity.ok(chamadoService.listarChamados());
+    public ResponseEntity<List<DadosConsultaChamadoDTO>> listarChamados(
+            @RequestParam(required = false) StatusChamado status,
+            @AuthenticationPrincipal UserDetails logado) {
+        return ResponseEntity.ok(chamadoService.listarChamados(status, logado));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DadosConsultaChamadoDTO> encontrarChamadoPorId(@PathVariable Long id) {
-        return ResponseEntity.ok(chamadoService.buscarChamadoPorId(id));
+    public ResponseEntity<DadosConsultaChamadoDTO> encontrarChamadoPorId(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails logado) {
+        return ResponseEntity.ok(chamadoService.buscarChamadoPorId(id, logado));
     }
 }
