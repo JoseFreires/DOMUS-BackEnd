@@ -3,23 +3,21 @@ package com.domus.tcc.backend.security;
 import java.io.IOException;
 import java.util.Set;
 
-import com.domus.tcc.backend.domain.ContaAdm;
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.domus.tcc.backend.repository.ContaAdmRepository;
-import jakarta.servlet.http.Cookie;
-import lombok.AllArgsConstructor;
+import com.domus.tcc.backend.repository.UsuarioRepository;
+import com.domus.tcc.backend.services.TokenService;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
-import com.domus.tcc.backend.services.TokenService;
-import com.domus.tcc.backend.repository.UsuarioRepository;
-
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.util.WebUtils;
+import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
 @Component
@@ -30,21 +28,26 @@ public class SecurityFilter extends OncePerRequestFilter {
     private final TokenService tokenService;
 
     private static final Set<String> ROTAS_ISENTAS = Set.of(
-            "POST /auth/entrar",
-            "POST /auth/sair",
-            "GET /auth/eu",
-            "POST /auth/esqueci-minha-senha",
-            "PUT /auth/redefinir-senha",
-            "PUT /auth/aceitar-termos",
-            "GET /swagger-ui/index.html",
-            "GET /swagger-ui.html"
+            "POST " + RotasPublicas.ENTRAR,
+            "POST " + RotasPublicas.SAIR,
+            "GET " + RotasPublicas.USUARIO_ATUAL,
+            "POST " + RotasPublicas.ESQUECI_SENHA,
+            "PUT " + RotasPublicas.REDEFINIR_SENHA,
+            "PUT " + RotasPublicas.ACEITAR_TERMOS
     );
 
     private boolean isRotaIsenta(HttpServletRequest request) {
-        String path = request.getRequestURI().substring(request.getContextPath().length());
-        return ROTAS_ISENTAS.contains(request.getMethod().toUpperCase() + " " + path);
+        return ROTAS_ISENTAS.contains(request.getMethod().toUpperCase() + " " + request.getServletPath());
     }
 
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return "OPTIONS".equalsIgnoreCase(request.getMethod())
+                || RotasPublicas.SWAGGER.equals(path)
+                || path.startsWith(RotasPublicas.SWAGGER_PREFIX)
+                || path.startsWith(RotasPublicas.OPENAPI_PREFIX);
+    }
 
     private void responderTermosNaoAceitos(HttpServletResponse response) throws IOException {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
@@ -60,59 +63,50 @@ public class SecurityFilter extends OncePerRequestFilter {
             throws IOException, ServletException {
 
         String tokenJwt = recuperarToken(request);
+        String subject = tokenJwt != null ? obterSubject(tokenJwt) : null;
+        UserDetails principal = resolverPrincipal(subject);
 
-        if (tokenJwt != null) {
-            String subject = tokenService.getSubject(tokenJwt);
+        if (principal != null) {
+            SecurityContextHolder.getContext().setAuthentication(
+                    new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
 
-            UserDetails principal = resolverPrincipal(subject);
-
-            if (principal != null) {
-
-                if (principal instanceof Usuario usuario
-                        && !usuario.isTermosAceitos()
-                        && !isRotaIsenta(request)) {
-
-                    responderTermosNaoAceitos(response);
-                    return;
-                }
-                var authentication = new UsernamePasswordAuthenticationToken(
-                        principal, null, principal.getAuthorities()
-                );
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+            if (principal instanceof Usuario usuario
+                    && !usuario.isTermosAceitos()
+                    && !isRotaIsenta(request)) {
+                request.setAttribute(LogFilter.ACCESS_DENIED_ATTRIBUTE, true);
+                responderTermosNaoAceitos(response);
+                return;
             }
         }
 
         filterChain.doFilter(request, response);
     }
 
+    private String obterSubject(String token) {
+        try {
+            return tokenService.getSubject(token);
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof JWTVerificationException) {
+                return null;
+            }
+            throw e;
+        }
+    }
 
     private UserDetails resolverPrincipal(String username) {
-        UserDetails detalhesUsuario = usuarioRepository.findByUsername(username);
-        Usuario usuario = detalhesUsuario instanceof Usuario encontrado ? encontrado : null;
-        if (usuario != null) {
-            return usuario.isEnabled() ? usuario : null;
+        if (username == null) {
+            return null;
         }
 
-        UserDetails detalhesContaAdm = contaAdmRepository.findByUsername(username);
-        ContaAdm contaAdm = detalhesContaAdm instanceof ContaAdm encontrada ? encontrada : null;
-        if (contaAdm != null && contaAdm.isEnabled()) {
-            return contaAdm;
+        UserDetails principal = usuarioRepository.findByUsername(username);
+        if (principal == null) {
+            principal = contaAdmRepository.findByUsername(username);
         }
-
-        return null;
+        return principal != null && principal.isEnabled() ? principal : null;
     }
 
     private String recuperarToken(HttpServletRequest request) {
-        Cookie[] cookies = request.getCookies();
-
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if ("jwtToken".equals(cookie.getName())) {
-                    return cookie.getValue();
-                }
-            }
-        }
-
-        return null;
+        var cookie = WebUtils.getCookie(request, "jwtToken");
+        return cookie != null ? cookie.getValue() : null;
     }
 }

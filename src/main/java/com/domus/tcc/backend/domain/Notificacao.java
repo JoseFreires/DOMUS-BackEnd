@@ -27,13 +27,13 @@ public class Notificacao {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_usuario", nullable = false)
+    @JoinColumn(name = "id_usuario_destinatario", nullable = false)
     private Usuario usuario;
 
     @Column(name = "descricao", nullable = false, length = 255)
     private String descricao;
 
-    @Column(name = "data_hora", nullable = false)
+    @Column(name = "data_hora_chegada", nullable = false)
     private LocalDateTime dataHora;
 
     public Notificacao(Usuario usuario, String descricao) {
