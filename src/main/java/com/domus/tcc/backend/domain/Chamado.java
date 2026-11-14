@@ -72,7 +72,7 @@ public class Chamado {
         this.descricaoInicial = dados.descricaoInicial();
         this.tipoChamado = dados.tipoChamado();
         this.statusChamado = StatusChamado.ABERTO;
-        this.imagem = imagem == null ? dados.imagem() : imagem;
+        this.imagem = imagem;
         this.dataHoraAbertura = LocalDateTime.now();
         this.morador = morador;
         this.sindico = sindico;

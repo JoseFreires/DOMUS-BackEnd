@@ -16,8 +16,7 @@ public record DadosRegistrarChamado(
         String descricaoInicial,
 
         @NotNull(message = "O Tipo do Chamado é obrigatório")
-        TipoChamado tipoChamado,
+        TipoChamado tipoChamado
 
-        String imagem
 ) {
 }

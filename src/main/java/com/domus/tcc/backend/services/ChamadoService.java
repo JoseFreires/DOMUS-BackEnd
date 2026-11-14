@@ -184,9 +184,9 @@ public class ChamadoService {
     }
 
     private void validarPapelOperador(UserDetails logado) {
-        if (!temPapel(logado, "ROLE_SINDICO", "ROLE_PORTEIRO")) {
+        if (!temPapel(logado, "ROLE_SINDICO")) {
             throw new ResponseStatusException(
-                    FORBIDDEN, "Somente síndicos ou porteiros podem tratar ou concluir chamados");
+                    FORBIDDEN, "Somente síndicos podem tratar ou concluir chamados");
         }
     }
 
